@@ -1,15 +1,18 @@
 import cv2
 import Objects.CameraBufferCleaner as cbf
 from Utils.StereoUtils import splitMergedImage
+from Utils.ImageUtils import removeImageBorder
 from time import sleep
 
 
 # Camera class based on VideoCapture + CameraBufferCleaner
 
 class VirtualCamera():
+    # Internal params
+
     def __init__(self, name, width=0, heigth=0):
         self.name = name
-        self.capture = cv2.VideoCapture(name)
+        self.capture = cv2.VideoCapture(name, cv2.CAP_MSMF )
 
         if width != 0 and heigth != 0:
             self.__setResolution(width, heigth)
@@ -27,16 +30,16 @@ class VirtualCamera():
 
     def getSplittedFrames(self):
         if self.buffer is not None:
-            return splitMergedImage(self.buffer.last_frame)
+            return splitMergedImage(removeImageBorder(self.buffer.last_frame))
 
     def getLeftFrame(self):
         if self.buffer is not None:
-            L, R = splitMergedImage(self.buffer.last_frame)
+            L, R = splitMergedImage(removeImageBorder(self.buffer.last_frame))
             return L
 
     def getRightFrame(self):
         if self.buffer is not None:
-            L, R = splitMergedImage(self.buffer.last_frame)
+            L, R = splitMergedImage(removeImageBorder(self.buffer.last_frame))
             return R
 
     def __setResolution(self, width=1920, height=1080):
@@ -50,7 +53,7 @@ class VirtualCamera():
         last_frame = self.buffer.last_frame
         if last_frame is not None:
             if mode == "BOTH":
-                cv2.imwrite(path, last_frame)
+                cv2.imwrite(path, removeImageBorder(last_frame))
                 print("Camera: " + str(self.name) + " - Last frame is saved")
             elif mode == "LEFT":
                 cv2.imwrite(path, self.getLeftFrame())
