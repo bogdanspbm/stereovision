@@ -1,6 +1,5 @@
 import threading
 
-
 # This class clears camera's capture buffer
 # Default OpenCV Buffer can consist old images from camera
 # To get the freshest image it's supposed to be cleaned

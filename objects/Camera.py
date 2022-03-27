@@ -1,6 +1,7 @@
 import cv2
-import objects.CameraBufferCleaner as cbf
-import time
+import Objects.CameraBufferCleaner as cbf
+from Utils.StereoUtils import splitMergedImage
+from time import sleep
 
 
 # Camera class based on VideoCapture + CameraBufferCleaner
@@ -10,7 +11,7 @@ class VirtualCamera():
         self.name = name
         self.capture = cv2.VideoCapture(name)
 
-        if width !=0 and heigth != 0:
+        if width != 0 and heigth != 0:
             self.__setResolution(width, heigth)
 
         if self.capture.isOpened():
@@ -24,6 +25,20 @@ class VirtualCamera():
         if self.buffer is not None:
             return self.buffer.last_frame
 
+    def getSplittedFrames(self):
+        if self.buffer is not None:
+            return splitMergedImage(self.buffer.last_frame)
+
+    def getLeftFrame(self):
+        if self.buffer is not None:
+            L, R = splitMergedImage(self.buffer.last_frame)
+            return L
+
+    def getRightFrame(self):
+        if self.buffer is not None:
+            L, R = splitMergedImage(self.buffer.last_frame)
+            return R
+
     def __setResolution(self, width=1920, height=1080):
         if self.capture is not None and self.capture.isOpened():
             res = self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
@@ -31,7 +46,20 @@ class VirtualCamera():
             res = self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
             print("Resolution: " + str(self.name) + " is updated")
 
-    def showLastFrame(self):
+    def saveLastFrame(self, path="frame.png", mode="BOTH"):
+        last_frame = self.buffer.last_frame
+        if last_frame is not None:
+            if mode == "BOTH":
+                cv2.imwrite(path, last_frame)
+                print("Camera: " + str(self.name) + " - Last frame is saved")
+            elif mode == "LEFT":
+                cv2.imwrite(path, self.getLeftFrame())
+                print("Camera: " + str(self.name) + " - Left frame is saved")
+            elif mode == "RIGHT":
+                cv2.imwrite(path, self.getRightFrame())
+                print("Camera: " + str(self.name) + " - Right frame is saved")
+
+    def showLastFrame(self, mode="BOTH"):
 
         # If buffer wasn't created return
         if self.buffer is None:
@@ -45,13 +73,18 @@ class VirtualCamera():
             last_frame = self.buffer.last_frame
             i += 1
             if last_frame is None:
-                time.sleep(1)
+                sleep(1)
             if i > 10:
                 break
 
         # If frame exists show it
         if last_frame is not None:
-            cv2.imshow("Virutal Camera" + str(self.name), last_frame)
+            if mode == "BOTH":
+                cv2.imshow("Virutal Camera" + str(self.name), last_frame)
+            elif mode == "LEFT":
+                cv2.imshow("Virutal Camera" + str(self.name), self.getLeftFrame())
+            elif mode == "RIGHT":
+                cv2.imshow("Virutal Camera" + str(self.name), self.getRightFrame())
             while True:
                 if cv2.waitKey(25) & 0xFF == ord('q'):
                     break
