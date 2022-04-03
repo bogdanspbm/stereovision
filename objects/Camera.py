@@ -12,7 +12,7 @@ class VirtualCamera():
 
     def __init__(self, name, width=0, heigth=0):
         self.name = name
-        self.capture = cv2.VideoCapture(name, cv2.CAP_MSMF )
+        self.capture = cv2.VideoCapture(name, cv2.CAP_MSMF)
 
         if width != 0 and heigth != 0:
             self.__setResolution(width, heigth)
@@ -44,9 +44,9 @@ class VirtualCamera():
 
     def __setResolution(self, width=1920, height=1080):
         if self.capture is not None and self.capture.isOpened():
-            res = self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-            print(res)
-            res = self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+            self.capture.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+            self.capture.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+            self.capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
             print("Resolution: " + str(self.name) + " is updated")
 
     def saveLastFrame(self, path="frame.png", mode="BOTH"):
@@ -91,3 +91,29 @@ class VirtualCamera():
             while True:
                 if cv2.waitKey(25) & 0xFF == ord('q'):
                     break
+
+    def showVideo(self, resize=(1920, 1080), filter="NONE", filter_params=[]):
+        counter = 1
+        while True:
+            last_frame = self.getLastFrame()
+            if last_frame is not None:
+                if filter == "NONE":
+                    resized = cv2.resize(last_frame, resize, interpolation=cv2.INTER_AREA)
+                    cv2.imshow("Virutal Camera" + str(self.name), resized)
+                elif filter == "CORNERS":
+                    l_f, r_f = self.getSplittedFrames()
+                    tmp_l = cv2.cvtColor(l_f, cv2.COLOR_BGR2GRAY)
+                    tmp_r = cv2.cvtColor(r_f, cv2.COLOR_BGR2GRAY)
+                    ret, corners_l = cv2.findChessboardCorners(tmp_l, filter_params[0])
+                    ret, corners_r = cv2.findChessboardCorners(tmp_r, filter_params[0])
+                    if ret is True:
+                        cv2.drawChessboardCorners(l_f, filter_params[0], corners_l, True)
+                        cv2.drawChessboardCorners(r_f, filter_params[0], corners_r, True)
+                        frame = cv2.hconcat([l_f,r_f])
+                        resized = cv2.resize(frame, resize, interpolation=cv2.INTER_AREA)
+                        cv2.imshow("Virutal Camera" + str(self.name), resized)
+                    else:
+                        cv2.imshow("Virutal Camera" + str(self.name), frame)
+            if cv2.waitKey(25) & 0xFF == ord('q'):
+                self.saveLastFrame(path="../Frames/frame_" + str(counter) + ".png")
+                counter += 1
