@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 
 def splitMergedImage(image):
 
@@ -14,3 +15,18 @@ def splitMergedImage(image):
     s2 = image[:, width_cutoff:]
 
     return s1, s2
+
+def getProjectionMatrixCalibrated(A1, A2, R, T):
+    RT = []
+
+    for i in range(3):
+        vec = [R[i][0], R[i][1], R[i][2], T[i][0]]
+        RT.append(vec)
+    RT_2 = np.array(RT)
+
+    RT_1 = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0]])
+
+    P_1 = np.matmul(A1, RT_1)
+    P_2 = np.matmul(A2, RT_2)
+
+    return P_1, P_2

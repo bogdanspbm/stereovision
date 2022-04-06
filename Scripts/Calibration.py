@@ -1,5 +1,4 @@
-import Objects.Camera as Camera
+import Objects.Calibrator as Calibrator
 
-camera = Camera.VirtualCamera(0, 3840, 1080)
-
-camera.showVideo(filter="CORNERS", filter_params=[(9, 14)])
+calibrator = Calibrator.Calibrator()
+calibrator.calibrate()
