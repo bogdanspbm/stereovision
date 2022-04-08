@@ -1,6 +1,6 @@
 import cv2
 
-from Utils.FileUtils import getFramesImages
+from Utils.FileUtils import getFramesImages, saveProjectionMatrix
 from Utils.StereoUtils import splitMergedImage, getProjectionMatrixCalibrated
 import numpy as np
 
@@ -48,7 +48,6 @@ class Calibrator():
 
         self.P_1, self.P_2 = getProjectionMatrixCalibrated(leftMatrix, leftMatrix, R, T)
 
-
     def __splitImages(self):
         self.images_left = []
         self.images_right = []
@@ -78,3 +77,6 @@ class Calibrator():
         for image in self.images_right:
             ret, corners = cv2.findChessboardCornersSB(image, (self.rows, self.columns))
             self.corners_right.append(corners)
+
+    def exportCalibration(self):
+        saveProjectionMatrix(self.P_1, self.P_2)
