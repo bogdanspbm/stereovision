@@ -1,6 +1,6 @@
 import cv2
 
-from Utils.FileUtils import getFramesImages, saveProjectionMatrix
+from Utils.FileUtils import getFramesImages, saveProjectionMatrix, saveFundamentalMatrix
 from Utils.StereoUtils import splitMergedImage, getProjectionMatrixCalibrated
 import numpy as np
 
@@ -45,6 +45,7 @@ class Calibrator():
 
         self.internal_left = leftMatrix
         self.internal_right = rightMatrix
+        self.F = F
 
         self.P_1, self.P_2 = getProjectionMatrixCalibrated(leftMatrix, leftMatrix, R, T)
 
@@ -80,3 +81,4 @@ class Calibrator():
 
     def exportCalibration(self):
         saveProjectionMatrix(self.P_1, self.P_2)
+        saveFundamentalMatrix(self.F)

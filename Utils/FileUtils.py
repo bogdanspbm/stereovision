@@ -26,3 +26,12 @@ def loadProjectionMatrix():
     P1 = np.genfromtxt('../config/projection_left.csv', delimiter=' ')
     P2 = np.genfromtxt('../config/projection_right.csv', delimiter=' ')
     return P1, P2
+
+def saveFundamentalMatrix(F):
+    df = pd.DataFrame(data=F.astype(float))
+    df.to_csv('../config/fundamental_matrix.csv', sep=' ', header=False, float_format='%.6f', index=False)
+
+
+def loadFundamentalMatrix():
+    F = np.genfromtxt('../config/fundamental_matrix.csv', delimiter=' ')
+    return F
