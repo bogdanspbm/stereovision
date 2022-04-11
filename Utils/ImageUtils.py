@@ -24,3 +24,8 @@ def drawEpiline(image, line):
     print((x0, y0), (x1, y1))
     cv2.line(image, (x0, y0), (x1, y1), (0, 255, 0), thickness=1)
     return image
+
+
+def imageDrawDistance(image, distance):
+    value = "Distance: " + str((int)(distance)) + " cm"
+    cv2.putText(image, value, (25, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255))

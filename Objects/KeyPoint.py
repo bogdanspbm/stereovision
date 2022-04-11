@@ -1,3 +1,6 @@
+import cv2
+
+
 class KeyPoint():
     def __init__(self, coord, param):
         self.coord = coord
@@ -16,5 +19,19 @@ def getHausdorfDistance(keypoin_a, keypoint_b):
     distance = 0
     for i in range(len(vec_a)):
         if vec_a[i] != vec_b[i]:
-            distance += 1
+            dif = (int(vec_a[i]) - int(vec_b[i]))
+            if dif > 0:
+                distance += dif
+            else:
+                distance -= dif
     return distance
+
+
+def convertToCVKeypoint(array):
+    result = []
+    for point in array:
+        try:
+            result.append(cv2.KeyPoint((float)(point.getCoord()[0]), (float)(point.getCoord()[1]), 1))
+        except:
+            result.append(cv2.KeyPoint((float)(point[0]), (float)(point[1]), 1))
+    return result
