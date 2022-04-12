@@ -28,6 +28,11 @@ class VirtualCamera():
         if self.buffer is not None:
             return self.buffer.last_frame
 
+    def getFrame(self):
+        if self.capture is not None:
+            ret, frame = self.capture.read()
+            return frame
+
     def getSplittedFrames(self):
         if self.buffer is not None:
             return splitMergedImage(removeImageBorder(self.buffer.last_frame))
