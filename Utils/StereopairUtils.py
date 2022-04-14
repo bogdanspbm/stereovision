@@ -3,7 +3,7 @@ import numpy as np
 
 from Utils.StereoUtils import splitMergedImage
 from Utils.ImageUtils import drawEpiline
-from Objects.KeyPoint import convertToCVKeypoint
+from Objects.KeyPoint import convertToCVKeypoint, getHausdorfDistance
 from Objects.BRIEF import DetectorBRIEF, DetectorHorizontalBRIEF
 from Objects.Detector import HorizontalDetector
 from Objects.Timer import Timer
@@ -49,14 +49,14 @@ def getCenterPair(image):
     image_left, image_right = splitMergedImage(image)
     height, width = image_left.shape
 
-    # detector = DetectorBRIEF()
-    detector = HorizontalDetector()
+    detector = DetectorBRIEF()
+    # detector = HorizontalDetector()
     timer = Timer()
 
     point_left = np.array([(int)(width / 2), (int)(height / 2)]).reshape(1, 2)
 
     points = []
-    x_arr = range(0, (int)(width / 2))
+    x_arr = range((int)(width / 2), width)
 
     for x in x_arr:
         y = (int)(height / 2)
@@ -64,6 +64,16 @@ def getCenterPair(image):
 
     vectors_a = detector.getParamVectors(image_left, point_left)
     vectors_b = detector.getParamVectors(image_right, points)
+
+    X = []
+    Y = []
+
+    for vec in vectors_b:
+        X.append(vec.coord[0])
+        Y.append(getHausdorfDistance(vec, vectors_a[0]))
+
+    plt.plot(X, Y)
+    plt.show()
 
     pair = detector.calculatePairs(vectors_a, vectors_b)
 
@@ -140,12 +150,17 @@ def getCenterPairBlockMatching(image, block_radius=10, scale=2):
     min_SAD = -1
     sub_center = -1
     for i in range(N - small_radius, width):
+        X.append(i * 2)
         sub_block = process_image[int(H - small_radius):int(H + small_radius),
                     int(i - small_radius):int(i + small_radius)]
         SAD = np.sum(np.absolute(main_block - sub_block) ** 2)
+        Y.append(SAD)
 
         if min_SAD == -1 or min_SAD > SAD:
             min_SAD = SAD
             sub_center = i - small_radius
+
+    plt.plot(X,Y)
+    #plt.show()
 
     return [(N * scale, H * scale), (sub_center * scale, H * scale)]

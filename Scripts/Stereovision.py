@@ -14,12 +14,17 @@ def loadImagesAndDoBlockMatching():
     timer = Timer()
     images = FileUtils.getFramesImages()
     counter = 1
-    radius = 50
+    radius = 25
+
+    stereo = cv2.StereoBM_create(numDisparities=64,blockSize=radius)
+
     for image in images:
         counter += 1
         height, width = image.shape
         timer.refreshTimer()
+        im_left, im_right = StereoUtils.splitMergedImage(image)
         pair = StereopairUtils.getCenterPairBlockMatching(image, radius)
+        # pair = StereopairUtils.getCenterPair(image)
         timer.printTime("BM Pair")
 
         a = np.array(pair[0]) - (radius, radius)
@@ -29,10 +34,14 @@ def loadImagesAndDoBlockMatching():
         b = np.array(pair[1]) + (radius, radius) + (int(width / 2), 0)
         cv2.rectangle(image, (a[0], a[1]), (b[0], b[1]), (0, 0, 255), 5)
 
-        cv2.imwrite("../Result/stereo_pair_" + str(counter) + ".png", image)
+        depth = stereo.compute(im_left,im_right)
+
+        print(depth)
+        cv2.imwrite("../Result/stereo_pair_" + str(counter) + ".png", depth)
 
         point_left = np.array(pair[0]).astype(float)
         point_right = np.array(pair[1]).astype(float)
+
 
 
 def openVideoAndGetDistanceBlockMatching():
@@ -63,5 +72,5 @@ def openVideoAndGetDistanceBlockMatching():
 
 
 
-# openVideoAndGetDistanceToAnyKeyPoint()
-openVideoAndGetDistanceBlockMatching()
+loadImagesAndDoBlockMatching()
+# openVideoAndGetDistanceBlockMatching()
