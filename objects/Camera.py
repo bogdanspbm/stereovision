@@ -1,6 +1,6 @@
 import cv2
 import Objects.CameraBufferCleaner as cbf
-from Utils.StereoUtils import splitMergedImage
+from Utils.ImageUtils import splitMergedImage
 from Utils.ImageUtils import removeImageBorder
 from time import sleep
 

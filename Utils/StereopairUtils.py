@@ -1,13 +1,206 @@
 import cv2
 import numpy as np
 
-from Utils.StereoUtils import splitMergedImage
+from Utils.ImageUtils import splitMergedImage
 from Utils.ImageUtils import drawEpiline
+from Objects.CameraUndistorter import Undistorter
 from Objects.KeyPoint import convertToCVKeypoint, getHausdorfDistance
 from Objects.BRIEF import DetectorBRIEF, DetectorHorizontalBRIEF
 from Objects.Detector import HorizontalDetector
 from Objects.Timer import Timer
 import matplotlib.pyplot as plt
+import Utils.MathUtils as MathUtils
+
+
+def getEpilineCenter(F, image=1, shape=(1920, 1080)):
+    width, height = shape
+    point_a = np.array([0, 0]).reshape(1, 2)
+    point_b = np.array([(int)(width / 2), (int)(height / 2)]).reshape(1, 2)
+
+    flag = 1
+
+    if image == 1:
+        flag = 2
+    else:
+        flag = 1
+
+    line_a = cv2.computeCorrespondEpilines(point_a, flag, F)
+    line_b = cv2.computeCorrespondEpilines(point_b, flag, F)
+
+    a_1 = line_a[0][0][0]
+    b_1 = line_a[0][0][1]
+    c_1 = line_a[0][0][2]
+
+    a_2 = line_b[0][0][0]
+    b_2 = line_b[0][0][1]
+    c_2 = line_b[0][0][2]
+
+    t_2 = (b_2 * c_1 - b_1 * c_2) / (b_1 - b_2 * a_1 / a_2)
+    t_1 = a_1 * t_2 / a_2
+
+    x_2 = t_2 / a_2
+    y_2 = (t_2 + c_2) / (-b_2)
+
+    x_1 = t_1 / a_1
+    y_1 = (t_1 + c_1) / (-b_1)
+
+    return [x_1, y_1]
+
+
+def findBothEpilines(point, F, image=1, shape=(1920, 1080)):
+    epiline_center = getEpilineCenter(F, image, shape)
+    line_a = cv2.computeCorrespondEpilines(np.array(point).reshape(1, 2), image, F)
+
+    a_1 = line_a[0][0][0]
+    b_1 = line_a[0][0][1]
+    c_1 = line_a[0][0][2]
+
+    a_2 = epiline_center[1] - point[1]
+    b_2 = point[0] - epiline_center[0]
+    c_2 = point[1] * (epiline_center[0] - point[0]) - point[0] * (epiline_center[1] - point[1])
+
+    return [a_1, b_1, c_1], [a_2, b_2, c_2]
+
+
+def drawBothEpilines(image, point, F, image_mode=1):
+    image_left, image_right = splitMergedImage(image)
+    height, width = image_left.shape
+    line_a, line_b = findBothEpilines(point, F, image_mode, (width, height))
+
+    x_a_1 = 0
+    x_a_2 = width
+    y_a_1 = (int)((-line_a[0] * x_a_1 - line_a[2]) / (line_a[1]))
+    y_a_2 = (int)((-line_a[0] * x_a_2 - line_a[2]) / (line_a[1]))
+
+    x_b_1 = 0
+    x_b_2 = width
+    y_b_1 = (int)((-line_b[0] * x_b_1 - line_b[2]) / (line_b[1]))
+    y_b_2 = (int)((-line_b[0] * x_b_2 - line_b[2]) / (line_b[1]))
+
+    cv2.line(image_left, (x_a_1, y_a_1), (x_a_2, y_a_2), (0, 0, 255))
+    cv2.line(image_right, (x_b_1, y_b_1), (x_b_2, y_b_2), (0, 0, 255))
+
+    frame = cv2.hconcat([image_left, image_right])
+
+    return frame
+
+
+def generateDisparityMap(image, F):
+    timer = Timer()
+    height, width = image.shape
+    resized_down = cv2.resize(image, ((int)(width / 8), (int)(height / 8)), interpolation=cv2.INTER_LINEAR)
+    timer.printTime("Resize")
+    # blur = cv2.GaussianBlur(image, (21, 21), 10)
+    # image_left, image_right = splitMergedImage(blur)
+    #undistorter = Undistorter()
+    #stereo = cv2.StereoBM_create(numDisparities=16, blockSize=21)
+    #image_left, image_right = undistorter.quickUndistort(image)
+    #disparity = stereo.compute(image_left, image_right)
+    # detected_edges = cv2.Canny(image, 100, 200)
+    # detected_edges = cv2.Laplacian(image, cv2.CV_64F)
+
+    # height, width = blur.shape
+    # blur_offset = np.append(blur, np.zeros((height, 1)), axis=1)
+    # blur_offset = blur[:,0:]
+
+    return resized_down
+    # return cv2.hconcat([image_left, image_right])
+
+
+def generateScanline(image, point, F, image_mode=1):
+    timer = Timer()
+    blur = cv2.GaussianBlur(image, (21, 21), 10)
+    image_left, image_right = splitMergedImage(blur)
+    height, width = image_left.shape
+    line_a, line_b = findBothEpilines(point, F, image_mode, (width, height))
+
+    x_a_1 = 0
+    x_a_2 = width
+    y_a_1 = (int)((-line_a[0] * x_a_1 - line_a[2]) / (line_a[1]))
+    y_a_2 = (int)((-line_a[0] * x_a_2 - line_a[2]) / (line_a[1]))
+
+    x_b_1 = 0
+    x_b_2 = width
+    y_b_1 = (int)((-line_b[0] * x_b_1 - line_b[2]) / (line_b[1]))
+    y_b_2 = (int)((-line_b[0] * x_b_2 - line_b[2]) / (line_b[1]))
+
+    X_1 = []
+    I_1 = []
+    for x in range(x_a_1, x_a_2):
+        # y = (int)((-line_a[0] * x - line_a[2]) / (line_a[1]))
+        y = point[1]
+        if y >= 0 and y < height:
+            X_1.append(x)
+            I_1.append(image_left[y, x])
+
+    I_2 = []
+    X_2 = []
+    for x in range(x_b_1, x_b_2):
+        # y = (int)((-line_b[0] * x - line_b[2]) / (line_b[1]))
+        y = point[1]
+        if y >= 0 and y < height:
+            X_2.append(x)
+            I_2.append(image_right[y, x])
+
+    extremums_a = MathUtils.findExtremums(I_1, separate=False)
+    extremums_b = MathUtils.findExtremums(I_2, separate=False)
+
+    points_a = []
+
+    for ext in extremums_a:
+        x = ext[0]
+        # y = (int)((-line_a[0] * x - line_a[2]) / (line_a[1]))
+        y = point[1]
+        points_a.append([x, y, ext[2]])
+
+    points_b = []
+
+    for ext in extremums_b:
+        x = ext[0]
+        # y = (int)((-line_b[0] * x - line_b[2]) / (line_b[1]))
+        y = point[1]
+        points_b.append([x, y, ext[2]])
+
+    pairs = MathUtils.matchExtremus(image_left, image_right, points_a, points_b)
+
+    disp_pairs = []
+
+    if len(pairs) > 0:
+        for x in range(x_a_1, x_a_2):
+            y = (int)((-line_a[0] * x - line_a[2]) / (line_a[1]))
+            pre_pair = None
+            after_pair = None
+            for i in range(len(pairs) - 1):
+                pair_l = pairs[i]
+                pair_r = pairs[i + 1]
+
+                if pair_l[0][0] <= x and pair_r[0][0] >= x:
+                    pre_pair = pair_l
+                    after_pair = pair_r
+                    break
+
+            if pre_pair is None:
+                if x < pairs[0][0][0]:
+                    after_pair = pairs[0]
+                if x > pairs[len(pairs) - 1][0][0]:
+                    pre_pair = pairs[len(pairs) - 1]
+
+            disp = 0
+
+            if pre_pair is not None and after_pair is not None:
+                start_disp = pre_pair[0][0] - pre_pair[1][0]
+                end_disp = after_pair[0][0] - after_pair[1][0]
+                disp = (x - pre_pair[0][0]) * end_disp / (after_pair[0][0] - pre_pair[0][0]) + (
+                        x - after_pair[0][0]) * start_disp / (pre_pair[0][0] - after_pair[0][0])
+
+            elif after_pair is not None:
+                disp = after_pair[0][0] - after_pair[1][0]
+            elif pre_pair is not None:
+                disp = pre_pair[0][0] - pre_pair[1][0]
+
+            disp_pairs.append(disp)
+
+    return disp_pairs
 
 
 def getCenterPair(image, F):
@@ -160,7 +353,7 @@ def getCenterPairBlockMatching(image, block_radius=10, scale=2):
             min_SAD = SAD
             sub_center = i - small_radius
 
-    plt.plot(X,Y)
-    #plt.show()
+    plt.plot(X, Y)
+    # plt.show()
 
     return [(N * scale, H * scale), (sub_center * scale, H * scale)]

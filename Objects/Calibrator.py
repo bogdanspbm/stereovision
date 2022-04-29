@@ -1,7 +1,9 @@
 import cv2
 
-from Utils.FileUtils import getFramesImages, saveProjectionMatrix, saveFundamentalMatrix
-from Utils.StereoUtils import splitMergedImage, getProjectionMatrixCalibrated
+from Utils.FileUtils import getFramesImages, saveProjectionMatrix, saveFundamentalMatrix, saveDistorCoeffs, \
+    saveCameraMatrix
+from Utils.StereoUtils import  getProjectionMatrixCalibrated
+from Utils.ImageUtils import splitMergedImage
 import numpy as np
 
 
@@ -21,7 +23,7 @@ class Calibrator():
         self.__calibrateInternalParams()
 
     def __calibrateInternalParams(self):
-        width, height = self.images_left[0].shape
+        self.height, self.width = self.images_left[0].shape
 
         N = len(self.corners_left)
         obj_points = []
@@ -29,11 +31,11 @@ class Calibrator():
             obj_points.append(self.object_points)
 
         retval, leftMatrix, leftCoeffs, leftR, leftT = cv2.calibrateCamera(obj_points, self.corners_left,
-                                                                           (width, height), None, None)
+                                                                           (self.width, self.height), None, None)
 
-        width, height = self.images_right[0].shape
+        self.height, self.width = self.images_right[0].shape
         retval, rightMatrix, rightCoeffs, rightR, rightT = cv2.calibrateCamera(obj_points, self.corners_right,
-                                                                               (width, height), None, None)
+                                                                               (self.width, self.height), None, None)
 
         flags = 0
         flags |= cv2.CALIB_SAME_FOCAL_LENGTH
@@ -41,13 +43,26 @@ class Calibrator():
         retval, leftMatrix, leftCoeffs, rightMatrix, rightCoeffs, R, T, E, F = \
             cv2.stereoCalibrate(obj_points, self.corners_left, self.corners_right,
                                 leftMatrix, leftCoeffs, rightMatrix,
-                                rightCoeffs, (width, height), flags=flags)
+                                rightCoeffs, (self.width, self.height), flags=flags)
+
+        self.rotation = R
+        self.translate = T
+        self.dist_left = leftCoeffs
+        self.dist_right = rightCoeffs
 
         self.internal_left = leftMatrix
         self.internal_right = rightMatrix
         self.F = F
 
         self.P_1, self.P_2 = getProjectionMatrixCalibrated(leftMatrix, leftMatrix, R, T)
+
+    def calibrateRectify(self):
+        rectify_scale = 1
+        leftR, rightR, self.P1, self.P2, Q, roiL, roiR = cv2.stereoRectify(self.internal_left, self.dist_left,
+                                                                           self.internal_right, self.dist_right,
+                                                                           (self.width, self.height), self.rotation,
+                                                                           self.translate,
+                                                                           rectify_scale, (0, 0))
 
     def __splitImages(self):
         self.images_left = []
@@ -82,3 +97,5 @@ class Calibrator():
     def exportCalibration(self):
         saveProjectionMatrix(self.P_1, self.P_2)
         saveFundamentalMatrix(self.F)
+        saveDistorCoeffs(self.dist_left, self.dist_right)
+        saveCameraMatrix(self.internal_left, self.internal_right)

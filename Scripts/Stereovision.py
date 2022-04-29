@@ -9,6 +9,30 @@ import Utils.StereopairUtils as StereopairUtils
 import cv2
 
 
+def loadImagesAndDoEplines():
+    P_1, P_2 = FileUtils.loadProjectionMatrix()
+    timer = Timer()
+    images = FileUtils.getFramesImages()
+    counter = 1
+    radius = 25
+
+    F = FileUtils.loadFundamentalMatrix()
+
+    # StereopairUtils.getEpilineCenter(F)
+
+    for image in images:
+        height, width = image.shape
+        counter += 1
+        timer.refreshTimer()
+        frame = []
+        scanline = StereopairUtils.generateDisparityMap(image, F)
+        timer.printTime("Calc epilines")
+
+        frame = scanline
+        print(frame.shape)
+        cv2.imwrite("../Result/both_epiline_" + str(counter) + ".png", frame)
+
+
 def loadImagesAndDoBlockMatching():
     P_1, P_2 = FileUtils.loadProjectionMatrix()
     timer = Timer()
@@ -16,7 +40,7 @@ def loadImagesAndDoBlockMatching():
     counter = 1
     radius = 25
 
-    stereo = cv2.StereoBM_create(numDisparities=64,blockSize=radius)
+    stereo = cv2.StereoBM_create(numDisparities=64, blockSize=radius)
 
     for image in images:
         counter += 1
@@ -34,14 +58,13 @@ def loadImagesAndDoBlockMatching():
         b = np.array(pair[1]) + (radius, radius) + (int(width / 2), 0)
         cv2.rectangle(image, (a[0], a[1]), (b[0], b[1]), (0, 0, 255), 5)
 
-        depth = stereo.compute(im_left,im_right)
+        depth = stereo.compute(im_left, im_right)
 
         print(depth)
         cv2.imwrite("../Result/stereo_pair_" + str(counter) + ".png", depth)
 
         point_left = np.array(pair[0]).astype(float)
         point_right = np.array(pair[1]).astype(float)
-
 
 
 def openVideoAndGetDistanceBlockMatching():
@@ -63,7 +86,7 @@ def openVideoAndGetDistanceBlockMatching():
                 cv2.circle(frame, ((int)(width / 4), (int)(height / 2)), 5, (0, 0, 255))
                 cv2.circle(frame, ((int)(width / 2) + (int)(point_right[0]), (int)(point_right[1])), 5, (0, 0, 255))
                 coord = StereoUtils.getWorldCoordinates(P_1, P_2, point_left, point_right)
-                ImageUtils.imageDrawDistance(frame,coord[2])
+                ImageUtils.imageDrawDistance(frame, coord[2])
                 print(coord)
             resized = cv2.resize(frame, (1920, 1080), interpolation=cv2.INTER_AREA)
             cv2.imshow("Virutal Camera", resized)
@@ -71,6 +94,6 @@ def openVideoAndGetDistanceBlockMatching():
             return
 
 
-
-loadImagesAndDoBlockMatching()
+# loadImagesAndDoBlockMatching()
 # openVideoAndGetDistanceBlockMatching()
+loadImagesAndDoEplines()

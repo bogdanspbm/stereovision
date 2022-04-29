@@ -1,21 +1,6 @@
 import cv2
 import numpy as np
 
-def splitMergedImage(image):
-
-    if image is None:
-        return None, None
-
-    height = image.shape[0]
-    width = image.shape[1]
-
-    width_cutoff = width // 2
-
-    s1 = image[:, :width_cutoff]
-    s2 = image[:, width_cutoff:]
-
-    return s1, s2
-
 def getProjectionMatrixCalibrated(A1, A2, R, T):
     RT = []
 
