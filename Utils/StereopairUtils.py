@@ -1,15 +1,15 @@
 import cv2
 import numpy as np
 
-from Utils.ImageUtils import splitMergedImage
-from Utils.ImageUtils import drawEpiline
-from Objects.CameraUndistorter import Undistorter
-from Objects.KeyPoint import convertToCVKeypoint, getHausdorfDistance
-from Objects.BRIEF import DetectorBRIEF, DetectorHorizontalBRIEF
-from Objects.Detector import HorizontalDetector
+from Utils.ImageUtils import splitMergedImage, getScanline
+from Objects.KeyPoint import getHausdorfDistance
+from Objects.BRIEF import DetectorBRIEF
 from Objects.Timer import Timer
+from Objects.Plot import Plot
 import matplotlib.pyplot as plt
 import Utils.MathUtils as MathUtils
+from scipy.interpolate import Rbf
+from scipy import interpolate
 
 
 def getEpilineCenter(F, image=1, shape=(1920, 1080)):
@@ -87,24 +87,110 @@ def drawBothEpilines(image, point, F, image_mode=1):
 
 def generateDisparityMap(image, F):
     timer = Timer()
+    plot = Plot()
+
     height, width = image.shape
-    resized_down = cv2.resize(image, ((int)(width / 8), (int)(height / 8)), interpolation=cv2.INTER_LINEAR)
-    timer.printTime("Resize")
-    # blur = cv2.GaussianBlur(image, (21, 21), 10)
-    # image_left, image_right = splitMergedImage(blur)
-    #undistorter = Undistorter()
-    #stereo = cv2.StereoBM_create(numDisparities=16, blockSize=21)
-    #image_left, image_right = undistorter.quickUndistort(image)
-    #disparity = stereo.compute(image_left, image_right)
-    # detected_edges = cv2.Canny(image, 100, 200)
-    # detected_edges = cv2.Laplacian(image, cv2.CV_64F)
 
-    # height, width = blur.shape
-    # blur_offset = np.append(blur, np.zeros((height, 1)), axis=1)
-    # blur_offset = blur[:,0:]
+    # blur = cv2.GaussianBlur(image, (11, 11), 1)
+    resized = cv2.resize(image, ((int)(width / 2), (int)(height / 2)), interpolation=cv2.INTER_LINEAR)
+    detected_edges = cv2.Canny(resized, 100, 200)
+    #detected_edges = cv2.Laplacian(resized, cv2.CV_64F)
 
-    return resized_down
-    # return cv2.hconcat([image_left, image_right])
+    image_left, image_right = splitMergedImage(resized)
+    edge_left, edge_right = splitMergedImage(detected_edges)
+    height, width = edge_left.shape
+
+    left_border, right_border = getStereoImageBorders(image_left, image_right)
+
+    disp = np.zeros((height, width))
+
+    disp[:, 0] = left_border
+    disp[:, right_border] = width - right_border
+
+    for y in range(height):
+        point = (0, y)
+        line_a, line_b = findBothEpilines(point, F, 1, (width, height))
+
+        x_a_1 = 0
+        x_a_2 = width
+        y_a_1 = (int)((-line_a[0] * x_a_1 - line_a[2]) / (line_a[1]))
+        y_a_2 = (int)((-line_a[0] * x_a_2 - line_a[2]) / (line_a[1]))
+
+        x_b_1 = 0
+        x_b_2 = width
+        y_b_1 = (int)((-line_b[0] * x_b_1 - line_b[2]) / (line_b[1]))
+        y_b_2 = (int)((-line_b[0] * x_b_2 - line_b[2]) / (line_b[1]))
+
+        scanline_a = getScanline(edge_left, [x_a_1, y_a_1], [x_a_2, y_a_2])
+        scanline_b = getScanline(edge_right, [x_b_1, y_b_1], [x_b_2, y_b_2])
+
+        extremus_a = MathUtils.findExtremums(scanline_a, separate=False, limit=5)
+        extremus_b = MathUtils.findExtremums(scanline_b, separate=False, limit=5)
+
+        points_a = MathUtils.generateExtremumPoints(extremus_a, line_a, height)
+        points_b = MathUtils.generateExtremumPoints(extremus_b, line_b, height)
+
+        # 1.50 sec
+        if len(points_a) > 0 and len(points_b) > 0:
+            pairs = MathUtils.matchExtremus(image_left, image_right, points_a, points_b, radius=30)
+
+            for pair in pairs:
+                offset = abs(pair[1][0] - pair[0][0])
+                disp[pair[0][1], pair[0][0]] = offset
+
+    return disp
+
+
+def getDisparityByX(x, pairs, left_border, right_border, width):
+    if len(pairs) == 0:
+        start_disp = left_border
+        end_dist = abs(width - right_border)
+        disp = (x) / (right_border) * (end_dist - start_disp) + start_disp
+        return disp
+
+    if x > right_border:
+        return abs(width - right_border)
+    elif x < pairs[0][0][0]:
+        start_disp = left_border
+        end_dist = abs(pairs[0][0][0] - pairs[0][1][0])
+        disp = (x - pairs[0][0][0]) / (pairs[0][0][0]) * (end_dist - start_disp) + start_disp
+        return disp
+    else:
+        for i in range(len(pairs) - 1):
+            if x > pairs[i][0][0] and x < pairs[i + 1][0][0]:
+                start_disp = abs(pairs[i][0][0] - pairs[i][1][0])
+                end_dist = abs(pairs[i + 1][0][0] - pairs[i + 1][1][0])
+                disp = (x - pairs[i][0][0]) / (pairs[i + 1][0][0] - pairs[i][0][0]) * (
+                        end_dist - start_disp) + start_disp
+                return disp
+
+
+def getStereoImageBorders(image_left, image_right):
+    height, width = image_left.shape
+
+    left_line = image_left[:, 0]
+    min_value = -1
+    min_x = 0
+
+    for x in range(min(width, 100)):
+        tmp_line = image_right[:, x]
+        value = MathUtils.getVecDistance(left_line, tmp_line)
+        if min_value == -1 or value < min_value:
+            min_value = value
+            min_x = x
+
+    right_line = image_right[:, width - 1]
+    min_value = -1
+    max_x = 0
+
+    for x in range(min(width, 100)):
+        tmp_line = image_left[:, width - 1 - x]
+        value = MathUtils.getVecDistance(left_line, tmp_line)
+        if min_value == -1 or value < min_value:
+            min_value = value
+            max_x = width - 1 - x
+
+    return min_x, max_x
 
 
 def generateScanline(image, point, F, image_mode=1):

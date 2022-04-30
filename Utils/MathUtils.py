@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 
 
-def findExtremums(vec, radius=5, separate=True, merge=True, merge_limit=2):
+def findExtremums(vec, radius=5, separate=True, merge=True, merge_limit=2, limit=0):
     minimums = []
     maximums = []
     extremums = []
@@ -23,12 +23,12 @@ def findExtremums(vec, radius=5, separate=True, merge=True, merge_limit=2):
 
                     if flag_minimum == False and flag_maximum == False:
                         break
-        if flag_minimum:
+        if flag_minimum and abs(el) >= limit:
             if separate:
                 minimums.append([i, el])
             else:
                 extremums.append((i, el, "min"))
-        if flag_maximum:
+        if flag_maximum and abs(el) >= limit:
             if separate:
                 maximums.append([i, el])
             else:
@@ -141,7 +141,7 @@ def getDistanceBetweenEdges(edge_a, edge_b, disp, a=1, b=1, c=1):
     return a * E_a + b * E_b + c * E_c
 
 
-def matchExtremus(image_a, image_b, extr_a, extr_b, radius=20):
+def matchExtremus(image_a, image_b, extr_a, extr_b, radius=20, dist_limit = 1000):
     pairs = []
 
     image_a_copy = cv2.copyMakeBorder(
@@ -174,7 +174,7 @@ def matchExtremus(image_a, image_b, extr_a, extr_b, radius=20):
                     min_dist = dist
                     min = b
 
-        if min is not None and min_dist < 300:
+        if min is not None and min_dist < dist_limit:
             pairs.append([a, min])
 
     return pairs
@@ -192,3 +192,15 @@ def getVecDistance(vec_a, vec_b):
 
 def getMatrixDistance(mat_a, mat_b):
     return math.sqrt(np.sum(np.absolute(mat_a - mat_b) ** 2))
+
+
+def generateExtremumPoints(extremums, line, height):
+    points = []
+
+    for ext in extremums:
+        x = ext[0]
+        y = (int)((-line[0] * x - line[2]) / (line[1]))
+        if y >= 0 and y < height:
+            points.append([x, y, ext[2]])
+
+    return points

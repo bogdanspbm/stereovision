@@ -13,8 +13,8 @@ def removeImageBorder(image, border=0):
 
     return s2
 
-def splitMergedImage(image):
 
+def splitMergedImage(image):
     if image is None:
         return None, None
 
@@ -44,3 +44,30 @@ def drawEpiline(image, line):
 def imageDrawDistance(image, distance):
     value = "Distance: " + str((int)(distance)) + " cm"
     cv2.putText(image, value, (25, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255))
+
+
+def getScanline(image, point_start, point_end):
+    height, width = image.shape
+    scanline = []
+
+    a_x = point_start[0]
+    a_y = point_start[1]
+
+    b_x = point_end[0]
+    b_y = point_end[1]
+
+    if a_y == b_y:
+        if a_y < height:
+            return image[a_y, :]
+        else:
+            return []
+
+    if a_y >= height and b_y >= height:
+        return []
+
+    for x in range(a_x, b_x):
+        y = (int)((x - a_x) / (b_x - a_x) * (b_y - a_y) + a_y)
+        if y < height and y >= 0:
+            scanline.append(image[y, x])
+
+    return scanline
