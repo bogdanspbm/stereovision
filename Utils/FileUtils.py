@@ -65,3 +65,7 @@ def loadDistortionMatrix():
 def loadFundamentalMatrix():
     F = np.genfromtxt('../config/fundamental_matrix.csv', delimiter=' ')
     return F
+
+def loadDistancesForTest():
+    mat = np.genfromtxt('../config/distance_test.csv', delimiter=';')
+    return mat

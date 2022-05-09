@@ -1,6 +1,7 @@
 import math
 import cv2
 import numpy as np
+from math import sqrt
 
 
 def findExtremums(vec, radius=5, separate=True, merge=True, merge_limit=2, limit=0):
@@ -141,7 +142,7 @@ def getDistanceBetweenEdges(edge_a, edge_b, disp, a=1, b=1, c=1):
     return a * E_a + b * E_b + c * E_c
 
 
-def matchExtremus(image_a, image_b, extr_a, extr_b, radius=20, dist_limit = 1000):
+def matchExtremus(image_a, image_b, extr_a, extr_b, radius=20, dist_limit=1000):
     pairs = []
 
     image_a_copy = cv2.copyMakeBorder(
@@ -204,3 +205,8 @@ def generateExtremumPoints(extremums, line, height):
             points.append([x, y, ext[2]])
 
     return points
+
+
+def getVectorNorm(vec):
+    norm = sqrt(vec[0] ** 2 + vec[1] ** 2 + vec[2] ** 2)
+    return norm

@@ -8,8 +8,7 @@ from Objects.Timer import Timer
 from Objects.Plot import Plot
 import matplotlib.pyplot as plt
 import Utils.MathUtils as MathUtils
-from scipy.interpolate import Rbf
-from scipy import interpolate
+
 
 
 def getEpilineCenter(F, image=1, shape=(1920, 1080)):
