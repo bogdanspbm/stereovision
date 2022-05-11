@@ -2,7 +2,7 @@ import cv2
 
 from Utils.FileUtils import getFramesImages, saveProjectionMatrix, saveFundamentalMatrix, saveDistorCoeffs, \
     saveCameraMatrix
-from Utils.StereoUtils import  getProjectionMatrixCalibrated
+from Utils.StereoUtils import getProjectionMatrixCalibrated
 from Utils.ImageUtils import splitMergedImage
 import numpy as np
 
@@ -45,6 +45,9 @@ class Calibrator():
                                 leftMatrix, leftCoeffs, rightMatrix,
                                 rightCoeffs, (self.width, self.height), flags=flags)
 
+        print("Calibrate ret value is: " + str(retval))
+        print("Used images count is: " + str(len(self.corners_left)))
+
         self.rotation = R
         self.translate = T
         self.dist_left = leftCoeffs
@@ -85,14 +88,29 @@ class Calibrator():
 
     def __getCorners(self):
         self.corners_left = []
-        for image in self.images_left:
-            ret, corners = cv2.findChessboardCornersSB(image, (self.rows, self.columns))
-            self.corners_left.append(corners)
-
         self.corners_right = []
+
+        left_arr = []
+        right_arr = []
+        left_ret_arr = []
+        right_ret_arr = []
+
+        for image in self.images_left:
+            left_ret, left_corners = cv2.findChessboardCornersSB(image, (self.rows, self.columns))
+            left_ret_arr.append(left_ret)
+            left_arr.append(left_corners)
+            # self.corners_left.append(corners)
+
         for image in self.images_right:
-            ret, corners = cv2.findChessboardCornersSB(image, (self.rows, self.columns))
-            self.corners_right.append(corners)
+            right_ret, right_corners = cv2.findChessboardCornersSB(image, (self.rows, self.columns))
+            right_ret_arr.append(right_ret)
+            right_arr.append(right_corners)
+            # self.corners_right.append(corners)
+
+        for i in range(len(right_ret_arr)):
+            if left_ret_arr[i] == True and right_ret_arr[i] == True:
+                self.corners_left.append(left_arr[i])
+                self.corners_right.append(right_arr[i])
 
     def exportCalibration(self):
         saveProjectionMatrix(self.P_1, self.P_2)
