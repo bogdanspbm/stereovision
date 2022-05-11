@@ -4,6 +4,7 @@ import Utils.StereoUtils as StereoUtils
 import Utils.FileUtils as FileUtils
 import Objects.Camera as Camera
 import Utils.ImageUtils as ImageUtils
+import Utils.MathUtils as MathUtils
 from Objects.Timer import Timer
 import Utils.StereopairUtils as StereopairUtils
 import cv2
@@ -67,6 +68,27 @@ def loadImagesAndDoBlockMatching():
         point_right = np.array(pair[1]).astype(float)
 
 
+def openImageAndGetDistance():
+    P_1, P_2 = FileUtils.loadProjectionMatrix()
+    F = FileUtils.loadFundamentalMatrix()
+
+    image = cv2.imread("../Images/Image_1.jpg")
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    height, width = gray.shape
+    pair = StereopairUtils.getCenterPairBlockMatching(gray, 21)
+
+    point_left = np.array(pair[0]).astype(float)
+    point_right = np.array(pair[1]).astype(float)
+
+    cv2.circle(image, ((int)(width / 4), (int)(height / 2)), 5, (0, 0, 255))
+    cv2.circle(image, ((int)(width / 2) + (int)(point_right[0]), (int)(point_right[1])), 5, (0, 0, 255))
+    coord = StereoUtils.getWorldCoordinates(P_1, P_2, point_left, point_right)
+    dist = MathUtils.getVectorNorm(coord)
+    ImageUtils.imageDrawDistance(image, dist)
+
+    cv2.imwrite("../Result/Distance.jpg", image)
+
+
 def openVideoAndGetDistanceBlockMatching():
     camera = Camera.VirtualCamera(0, 3840, 1080)
     P_1, P_2 = FileUtils.loadProjectionMatrix()
@@ -96,4 +118,5 @@ def openVideoAndGetDistanceBlockMatching():
 
 # loadImagesAndDoBlockMatching()
 # openVideoAndGetDistanceBlockMatching()
-loadImagesAndDoEplines()
+# loadImagesAndDoEplines()
+openImageAndGetDistance()
