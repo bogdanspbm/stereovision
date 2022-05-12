@@ -54,7 +54,7 @@ class VirtualCamera():
             self.capture.set(cv2.CAP_PROP_AUTO_EXPOSURE, 1)
             print("Resolution: " + str(self.name) + " is updated")
 
-    def saveLastFrame(self, path="frame.png", mode="BOTH"):
+    def saveLastFrame(self, path="../Result/frame.png", mode="BOTH"):
         last_frame = self.buffer.last_frame
         if last_frame is not None:
             if mode == "BOTH":
