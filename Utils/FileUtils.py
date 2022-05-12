@@ -1,5 +1,5 @@
 from os import listdir
-from cv2 import imread
+from cv2 import imread, FileStorage, FILE_STORAGE_WRITE, FILE_STORAGE_READ
 import pandas as pd
 import numpy as np
 
@@ -28,6 +28,7 @@ def loadProjectionMatrix():
     P1 = np.genfromtxt('../config/projection_left.csv', delimiter=' ')
     P2 = np.genfromtxt('../config/projection_right.csv', delimiter=' ')
     return P1, P2
+
 
 def saveCameraMatrix(P1, P2):
     df = pd.DataFrame(data=P1.astype(float))
@@ -66,6 +67,32 @@ def loadFundamentalMatrix():
     F = np.genfromtxt('../config/fundamental_matrix.csv', delimiter=' ')
     return F
 
+
 def loadDistancesForTest():
     mat = np.genfromtxt('../config/distance_test.csv', delimiter=';')
     return mat
+
+
+def saveRectifyMap(left_map, right_map):
+    cv_file = FileStorage("../config/stereo_map.xml", FILE_STORAGE_WRITE)
+    cv_file.write("Left_Stereo_Map_x", left_map[0])
+    cv_file.write("Left_Stereo_Map_y", left_map[1])
+    cv_file.write("Right_Stereo_Map_x", right_map[0])
+    cv_file.write("Right_Stereo_Map_y", right_map[1])
+    cv_file.release()
+
+
+def loadRectifyMap():
+    cv_file = FileStorage("../config/stereo_map.xml", FILE_STORAGE_READ)
+
+    a = cv_file.getNode("Left_Stereo_Map_x").mat()
+    b = cv_file.getNode("Left_Stereo_Map_y").mat()
+    left_map = (a, b)
+
+    a = cv_file.getNode("Right_Stereo_Map_x").mat()
+    b = cv_file.getNode("Right_Stereo_Map_y").mat()
+    right_map = (a, b)
+
+    cv_file.release()
+
+    return left_map, right_map

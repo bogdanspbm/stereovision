@@ -1,7 +1,7 @@
 import cv2
 
 from Utils.FileUtils import getFramesImages, saveProjectionMatrix, saveFundamentalMatrix, saveDistorCoeffs, \
-    saveCameraMatrix
+    saveCameraMatrix, saveRectifyMap
 from Utils.StereoUtils import getProjectionMatrixCalibrated
 from Utils.ImageUtils import splitMergedImage
 import numpy as np
@@ -17,10 +17,13 @@ class Calibrator():
         self.columns = columns
         self.square_size = square_size
 
-    def calibrate(self):
+    def calibrate(self, use_rectify=False):
         self.__getCorners()
         self.__generateWorldCoordinates()
         self.__calibrateInternalParams()
+
+        if use_rectify:
+            self.calibrateRectify()
 
     def __calibrateInternalParams(self):
         self.height, self.width = self.images_left[0].shape
@@ -66,6 +69,12 @@ class Calibrator():
                                                                            (self.width, self.height), self.rotation,
                                                                            self.translate,
                                                                            rectify_scale, (0, 0))
+
+        self.leftStereoMap = cv2.initUndistortRectifyMap(self.internal_left, self.dist_left, leftR, self.P1,
+                                                         (self.width, self.height), cv2.CV_16SC2)
+
+        self.rightStereoMap = cv2.initUndistortRectifyMap(self.internal_right, self.dist_right, rightR, self.P2,
+                                                          (self.width, self.height), cv2.CV_16SC2)
 
     def __splitImages(self):
         self.images_left = []
@@ -117,3 +126,6 @@ class Calibrator():
         saveFundamentalMatrix(self.F)
         saveDistorCoeffs(self.dist_left, self.dist_right)
         saveCameraMatrix(self.internal_left, self.internal_right)
+
+        if self.leftStereoMap is not None:
+            saveRectifyMap(self.leftStereoMap, self.rightStereoMap)

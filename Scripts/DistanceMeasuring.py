@@ -19,6 +19,7 @@ for vec in mat:
     A.append(real_distance)
     B.append(dist)
 
-plt.plot(A)
-plt.plot(B)
+plt.plot(A, label="Реальная дистанция")
+plt.plot(B, label="Стерео дистанция")
+plt.legend()
 plt.show()

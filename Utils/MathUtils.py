@@ -2,6 +2,7 @@ import math
 import cv2
 import numpy as np
 from math import sqrt
+import sys
 
 
 def findExtremums(vec, radius=5, separate=True, merge=True, merge_limit=2, limit=0):
@@ -210,3 +211,27 @@ def generateExtremumPoints(extremums, line, height):
 def getVectorNorm(vec):
     norm = sqrt(vec[0] ** 2 + vec[1] ** 2 + vec[2] ** 2)
     return norm
+
+
+def findGradients(vec_a):
+    vec_b = vec_a[1:].copy()
+    vec_b = np.append(vec_b, 0)
+
+    grad = vec_b - vec_a
+
+    return grad
+
+
+def pathFinder(location, path_map, dist):
+    distances = [dist]
+    if location[0] + 1 < len(path_map) and location[1] + 1 < len(path_map):
+        a = pathFinder([location[0] + 1, location[1] + 1], path_map, dist + path_map[location[0] + 1, location[1] + 1])
+        distances.append(a)
+    if location[0] + 1 < len(path_map) and location[1] < len(path_map):
+        a = pathFinder([location[0] + 1, location[1]], path_map, dist + path_map[location[0] + 1, location[1]])
+        distances.append(a)
+    if location[0] < len(path_map) and location[1] + 1 < len(path_map):
+        a = pathFinder([location[0], location[1] + 1], path_map, dist + path_map[location[0], location[1] + 1])
+        distances.append(a)
+
+    return min(distances)

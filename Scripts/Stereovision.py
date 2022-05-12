@@ -72,22 +72,47 @@ def openImageAndGetDistance():
     P_1, P_2 = FileUtils.loadProjectionMatrix()
     F = FileUtils.loadFundamentalMatrix()
 
-    image = cv2.imread("../Images/Image_1.jpg")
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    height, width = gray.shape
-    pair = StereopairUtils.getCenterPairBlockMatching(gray, 21)
+    images = FileUtils.getFramesImages()
+    counter = 1
+    for gray in images:
+        #gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        height, width = gray.shape
+        #StereopairUtils.getCenterPairEpipolar(gray)
+        pair = StereopairUtils.getCenterPairBlockMatching(gray, 21)
 
-    point_left = np.array(pair[0]).astype(float)
-    point_right = np.array(pair[1]).astype(float)
+        point_left = np.array(pair[0]).astype(float)
+        point_right = np.array(pair[1]).astype(float)
 
-    cv2.circle(image, ((int)(width / 4), (int)(height / 2)), 5, (0, 0, 255))
-    cv2.circle(image, ((int)(width / 2) + (int)(point_right[0]), (int)(point_right[1])), 5, (0, 0, 255))
-    coord = StereoUtils.getWorldCoordinates(P_1, P_2, point_left, point_right)
-    dist = MathUtils.getVectorNorm(coord)
-    ImageUtils.imageDrawDistance(image, dist)
+        cv2.circle(gray, ((int)(width / 4), (int)(height / 2)), 5, (0, 0, 255))
+        cv2.circle(gray, ((int)(width / 2) + (int)(point_right[0]), (int)(point_right[1])), 5, (0, 0, 255))
+        coord = StereoUtils.getWorldCoordinates(P_1, P_2, point_left, point_right)
+        dist = MathUtils.getVectorNorm(coord)
+        ImageUtils.imageDrawDistance(gray, dist)
 
-    cv2.imwrite("../Result/Distance.jpg", image)
+        cv2.imwrite("../Result/distance_" + str(counter) + ".jpg", gray)
+        counter += 1
 
+
+def openImageAndGetStereoMap():
+    P_1, P_2 = FileUtils.loadProjectionMatrix()
+    F = FileUtils.loadFundamentalMatrix()
+    stereo = cv2.StereoBM_create()
+
+    stereo.setMinDisparity(4)
+    stereo.setNumDisparities(128)
+    stereo.setBlockSize(21)
+    stereo.setSpeckleRange(16)
+    stereo.setSpeckleWindowSize(45)
+
+    images = FileUtils.getFramesImages()
+    counter = 1
+    for gray in images:
+        imgL, imgR = ImageUtils.splitMergedImage(gray)
+        disparity = stereo.compute(imgL,imgR)
+
+
+        cv2.imwrite("../Result/disparity_" + str(counter) + ".jpg", disparity)
+        counter += 1
 
 def openVideoAndGetDistanceBlockMatching():
     camera = Camera.VirtualCamera(0, 3840, 1080)
@@ -119,4 +144,5 @@ def openVideoAndGetDistanceBlockMatching():
 # loadImagesAndDoBlockMatching()
 # openVideoAndGetDistanceBlockMatching()
 # loadImagesAndDoEplines()
-openImageAndGetDistance()
+#openImageAndGetDistance()
+openImageAndGetStereoMap()

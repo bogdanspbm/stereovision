@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import sys
 
 from Utils.ImageUtils import splitMergedImage, getScanline
 from Objects.KeyPoint import getHausdorfDistance
@@ -8,7 +9,6 @@ from Objects.Timer import Timer
 from Objects.Plot import Plot
 import matplotlib.pyplot as plt
 import Utils.MathUtils as MathUtils
-
 
 
 def getEpilineCenter(F, image=1, shape=(1920, 1080)):
@@ -93,7 +93,7 @@ def generateDisparityMap(image, F):
     # blur = cv2.GaussianBlur(image, (11, 11), 1)
     resized = cv2.resize(image, ((int)(width / 2), (int)(height / 2)), interpolation=cv2.INTER_LINEAR)
     detected_edges = cv2.Canny(resized, 100, 200)
-    #detected_edges = cv2.Laplacian(resized, cv2.CV_64F)
+    # detected_edges = cv2.Laplacian(resized, cv2.CV_64F)
 
     image_left, image_right = splitMergedImage(resized)
     edge_left, edge_right = splitMergedImage(detected_edges)
@@ -442,3 +442,28 @@ def getCenterPairBlockMatching(image, block_radius=10, scale=2):
     # plt.show()
 
     return [(N * scale, H * scale), (sub_center * scale, H * scale)]
+
+
+def getCenterPairEpipolar(image):
+    timer = Timer()
+
+    blur = cv2.GaussianBlur(image, (5, 5), 0)
+
+    image_left, image_right = splitMergedImage(blur)
+    height, width = image_left.shape
+
+    epipolar_a = image_left[(int)(height / 2), :]
+    epipolar_b = image_right[(int)(height / 2), :]
+
+    #sys.setrecursionlimit(len(epipolar_a) ** 2)
+    scanline_map = generateScanlineMap(epipolar_a, epipolar_b)
+    #dist = MathUtils.pathFinder([0, 0], scanline_map, 0)
+    #print(dist)
+
+    cv2.imwrite("../Result/scanline_map.jpg", scanline_map)
+
+
+def generateScanlineMap(vec_a, vec_b):
+    N = len(vec_a)
+    mat = np.abs(np.transpose(np.tile(vec_a, (N, 1))) - np.tile(vec_b, (N, 1)))
+    return mat

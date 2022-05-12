@@ -71,3 +71,5 @@ def getScanline(image, point_start, point_end):
             scanline.append(image[y, x])
 
     return scanline
+
+
