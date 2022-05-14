@@ -235,3 +235,64 @@ def pathFinder(location, path_map, dist):
         distances.append(a)
 
     return min(distances)
+
+
+def getDerivative(arr):
+    offset = arr[1:].copy()
+    offset = np.append(offset, 0)
+
+    dif = abs(arr - offset)
+    return dif
+
+
+def getFluctuateZone(dif, radius=100, gamma=0.85):
+    res = dif.copy()
+
+    for i in range(radius + 1, len(dif) - radius):
+        tmp_max = 0
+        for k in range(-radius, radius):
+            if dif[i + k] > tmp_max:
+                tmp_max = dif[i + k]
+        res[i] = tmp_max
+
+    avg = np.average(res)
+
+    for i in range(len(res)):
+        if res[i] > avg * gamma:
+            res[i] = 100
+        else:
+            res[i] = 0
+    return res
+
+
+def getFlucluateZoneBorder(fluctuate_zones, center=960):
+    left_border = 0
+
+    for i in range(center):
+        if fluctuate_zones[center - i] == fluctuate_zones[center]:
+            left_border = center - i
+        else:
+            break
+
+    right_border = len(fluctuate_zones)
+
+    for i in range(len(fluctuate_zones) - center):
+        if fluctuate_zones[center + i] == fluctuate_zones[center]:
+            right_border = center + i
+        else:
+            break
+
+    return left_border, right_border
+
+
+def findBorderExtremus(ext_arr, border_left=0, border_right=1920):
+    left_ext = None
+    right_ext = None
+
+    for ext in ext_arr[0]:
+        if ext[0] > border_left and (left_ext is None or left_ext[0] > ext[0]):
+            left_ext = ext
+        if ext[0] < border_right and (right_ext is None or right_ext[0] < ext[0]):
+            right_ext = ext
+
+    return left_ext, right_ext

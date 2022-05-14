@@ -72,13 +72,19 @@ def openImageAndGetDistance():
     P_1, P_2 = FileUtils.loadProjectionMatrix()
     F = FileUtils.loadFundamentalMatrix()
 
+    timer = Timer()
     images = FileUtils.getFramesImages()
     counter = 1
     for gray in images:
         #gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         height, width = gray.shape
-        #StereopairUtils.getCenterPairEpipolar(gray)
+
+
+        timer.refreshTimer()
         pair = StereopairUtils.getCenterPairBlockMatching(gray, 21)
+        timer.printTime("BM")
+        #pair = StereopairUtils.getCenterPairEpipolar(gray)
+        #timer.printTime("EPIPOLAR")
 
         point_left = np.array(pair[0]).astype(float)
         point_right = np.array(pair[1]).astype(float)
@@ -144,5 +150,5 @@ def openVideoAndGetDistanceBlockMatching():
 # loadImagesAndDoBlockMatching()
 # openVideoAndGetDistanceBlockMatching()
 # loadImagesAndDoEplines()
-#openImageAndGetDistance()
-openImageAndGetStereoMap()
+openImageAndGetDistance()
+#openImageAndGetStereoMap()

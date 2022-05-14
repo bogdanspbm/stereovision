@@ -452,18 +452,77 @@ def getCenterPairEpipolar(image):
     image_left, image_right = splitMergedImage(blur)
     height, width = image_left.shape
 
+    center_x = (int)(width / 2)
+
     epipolar_a = image_left[(int)(height / 2), :]
     epipolar_b = image_right[(int)(height / 2), :]
 
-    #sys.setrecursionlimit(len(epipolar_a) ** 2)
-    scanline_map = generateScanlineMap(epipolar_a, epipolar_b)
-    #dist = MathUtils.pathFinder([0, 0], scanline_map, 0)
-    #print(dist)
+    ext_a = MathUtils.findExtremums(epipolar_a)
+    ext_b = MathUtils.findExtremums(epipolar_b)
 
-    cv2.imwrite("../Result/scanline_map.jpg", scanline_map)
+    der_a = MathUtils.getDerivative(epipolar_a)
+    der_b = MathUtils.getDerivative(epipolar_b)
+
+    fluct_zones_a = MathUtils.getFluctuateZone(der_a)
+    fluct_zones_b = MathUtils.getFluctuateZone(der_b)
+
+    left_border, right_border = MathUtils.getFlucluateZoneBorder(fluct_zones_b)
+
+    left_ext_pair, right_ext_pair = MathUtils.findBorderExtremus(ext_b, left_border, right_border)
+
+    left_border, right_border = MathUtils.getFlucluateZoneBorder(fluct_zones_a)
+
+    left_ext, right_ext = MathUtils.findBorderExtremus(ext_a, left_border, right_border)
+
+    #left_ext_pair = findPair(left_ext, ext_b, image_right)
+    #right_ext_pair = findPair(right_ext, ext_b, image_right)
+
+    left_disp = abs(left_ext[0] - left_ext_pair[0])
+    right_disp = abs(right_ext[0] - right_ext_pair[0])
+
+    center_disp = left_disp + (right_disp - left_disp) * (center_x - left_border) / (right_border - left_border)
+    center_x_pair = center_x + center_disp
+
+    #plt.clf()
+
+    # plt.scatter(left_ext[0], left_ext[1])
+    # plt.scatter(right_ext[0], right_ext[1])
+
+    # plt.scatter(left_ext_pair[0], left_ext_pair[1])
+    # plt.scatter(right_ext_pair[0], right_ext_pair[1])
+
+    #plt.plot(epipolar_a)
+    # plt.plot(fluct_zones_a)
+    #plt.plot(epipolar_b)
+    # plt.plot(fluct_zones_b)
+    #plt.show()
+
+    # cv2.imwrite("../Result/scanline_map.jpg", scanline_map)
+
+    #print(center_disp)
+    return [(center_x, (int)(height / 2)), (center_x_pair, (int)(height / 2))]
 
 
 def generateScanlineMap(vec_a, vec_b):
     N = len(vec_a)
     mat = np.abs(np.transpose(np.tile(vec_a, (N, 1))) - np.tile(vec_b, (N, 1)))
     return mat
+
+
+def findPair(ext, ext_arr, image, height=540, radius=50):
+    main_block = image[height - radius:height + radius, ext[0] - radius:ext[0] + radius]
+    min_dist = 0
+    min_ext = None
+
+    for el in ext_arr[0]:
+        try:
+            block = image[height - radius:height + radius, el[0] - radius:el[0] + radius]
+            dist = MathUtils.getMatrixDistance(main_block, block)
+
+            if min_ext is None or min_dist > dist:
+                min_dist = dist
+                min_ext = el.copy()
+        except:
+            pass
+
+    return min_ext
