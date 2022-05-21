@@ -10,32 +10,7 @@ import Utils.StereopairUtils as StereopairUtils
 import cv2
 
 
-def loadImagesAndDoEplines():
-    P_1, P_2 = FileUtils.loadProjectionMatrix()
-    timer = Timer()
-    images = FileUtils.getFramesImages()
-    counter = 1
-    radius = 25
-
-    F = FileUtils.loadFundamentalMatrix()
-
-    # StereopairUtils.getEpilineCenter(F)
-
-    for image in images:
-        height, width = image.shape
-        counter += 1
-        timer.refreshTimer()
-        frame = []
-        scanline = StereopairUtils.generateDisparityMap(image, F)
-        timer.printTime("Calc epilines")
-
-        frame = scanline
-        print(frame.shape)
-        cv2.imwrite("../Result/both_epiline_" + str(counter) + ".png", frame)
-
-
 def loadImagesAndDoBlockMatching():
-    P_1, P_2 = FileUtils.loadProjectionMatrix()
     timer = Timer()
     images = FileUtils.getFramesImages()
     counter = 1
@@ -49,7 +24,6 @@ def loadImagesAndDoBlockMatching():
         timer.refreshTimer()
         im_left, im_right = StereoUtils.splitMergedImage(image)
         pair = StereopairUtils.getCenterPairBlockMatching(image, radius)
-        # pair = StereopairUtils.getCenterPair(image)
         timer.printTime("BM Pair")
 
         a = np.array(pair[0]) - (radius, radius)
@@ -64,27 +38,19 @@ def loadImagesAndDoBlockMatching():
         print(depth)
         cv2.imwrite("../Result/stereo_pair_" + str(counter) + ".png", depth)
 
-        point_left = np.array(pair[0]).astype(float)
-        point_right = np.array(pair[1]).astype(float)
-
 
 def openImageAndGetDistance():
     P_1, P_2 = FileUtils.loadProjectionMatrix()
-    F = FileUtils.loadFundamentalMatrix()
 
     timer = Timer()
     images = FileUtils.getFramesImages()
     counter = 1
     for gray in images:
-        #gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         height, width = gray.shape
 
-
         timer.refreshTimer()
-        pair = StereopairUtils.getCenterPairBlockMatching(gray, 21)
-        timer.printTime("BM")
-        #pair = StereopairUtils.getCenterPairEpipolar(gray)
-        #timer.printTime("EPIPOLAR")
+        pair = StereopairUtils.getCenterPairEpipolar(gray)
+        timer.printTime("EPIPOLAR")
 
         point_left = np.array(pair[0]).astype(float)
         point_right = np.array(pair[1]).astype(float)
@@ -99,31 +65,9 @@ def openImageAndGetDistance():
         counter += 1
 
 
-def openImageAndGetStereoMap():
-    P_1, P_2 = FileUtils.loadProjectionMatrix()
-    F = FileUtils.loadFundamentalMatrix()
-    stereo = cv2.StereoBM_create()
-
-    stereo.setMinDisparity(4)
-    stereo.setNumDisparities(128)
-    stereo.setBlockSize(21)
-    stereo.setSpeckleRange(16)
-    stereo.setSpeckleWindowSize(45)
-
-    images = FileUtils.getFramesImages()
-    counter = 1
-    for gray in images:
-        imgL, imgR = ImageUtils.splitMergedImage(gray)
-        disparity = stereo.compute(imgL,imgR)
-
-
-        cv2.imwrite("../Result/disparity_" + str(counter) + ".jpg", disparity)
-        counter += 1
-
 def openVideoAndGetDistanceBlockMatching():
     camera = Camera.VirtualCamera(0, 3840, 1080)
     P_1, P_2 = FileUtils.loadProjectionMatrix()
-    F = FileUtils.loadFundamentalMatrix()
     counter = 0
     radius = 50
     while True:
@@ -147,8 +91,26 @@ def openVideoAndGetDistanceBlockMatching():
             return
 
 
-# loadImagesAndDoBlockMatching()
-# openVideoAndGetDistanceBlockMatching()
-# loadImagesAndDoEplines()
-openImageAndGetDistance()
-#openImageAndGetStereoMap()
+def openVideoAndGetDistanceEpipolar():
+    camera = Camera.VirtualCamera(0, 3840, 1080)
+    P_1, P_2 = FileUtils.loadProjectionMatrix()
+    counter = 0
+    while True:
+        frame = camera.getFrame()
+        if frame is not None:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            pair = StereopairUtils.getCenterPairEpipolar(frame)
+            height, width = frame.shape
+            if pair is not None:
+                counter += 1
+                point_left = np.array(pair[0]).astype(float)
+                point_right = np.array(pair[1]).astype(float)
+                cv2.circle(frame, ((int)(width / 4), (int)(height / 2)), 5, (0, 0, 255))
+                cv2.circle(frame, ((int)(width / 2) + (int)(point_right[0]), (int)(point_right[1])), 5, (0, 0, 255))
+                coord = StereoUtils.getWorldCoordinates(P_1, P_2, point_left, point_right)
+                ImageUtils.imageDrawDistance(frame, coord[2])
+                print(coord)
+            resized = cv2.resize(frame, (1920, 1080), interpolation=cv2.INTER_AREA)
+            cv2.imshow("Virutal Camera", resized)
+        if cv2.waitKey(25) & 0xFF == ord('q'):
+            return

@@ -6,6 +6,16 @@ from Utils.StereoUtils import getProjectionMatrixCalibrated
 from Utils.ImageUtils import splitMergedImage
 import numpy as np
 
+'''
+This class implements default Stereo System calibration
+The constructor receives next parameters:
+---------------------------------------------
+images - an array of images for calibrating
+rows - the amount of rows on calibrating chessboard
+columns - the amount of columns on calibrating chessboard
+square_size - the size of square in real life metrics (for instance cm)
+'''
+
 
 class Calibrator():
     def __init__(self, images=None, rows=9, columns=14, square_size=6):
@@ -17,6 +27,11 @@ class Calibrator():
         self.columns = columns
         self.square_size = square_size
 
+    '''
+    This method executes full calibration process and saves the result of calibration
+    You can also set use_rectify True to calibrate and save Rectify matrices
+    '''
+
     def calibrate(self, use_rectify=False):
         self.__getCorners()
         self.__generateWorldCoordinates()
@@ -24,6 +39,10 @@ class Calibrator():
 
         if use_rectify:
             self.calibrateRectify()
+
+    '''
+    This method calculates only internal camera parameters
+    '''
 
     def __calibrateInternalParams(self):
         self.height, self.width = self.images_left[0].shape
@@ -62,7 +81,11 @@ class Calibrator():
 
         self.P_1, self.P_2 = getProjectionMatrixCalibrated(leftMatrix, leftMatrix, R, T)
 
-    def calibrateRectify(self):
+    '''
+    This method calculates only rectify camera parameters
+    '''
+
+    def __calibrateRectify(self):
         rectify_scale = 1
         leftR, rightR, self.P1, self.P2, Q, roiL, roiR = cv2.stereoRectify(self.internal_left, self.dist_left,
                                                                            self.internal_right, self.dist_right,
@@ -76,6 +99,10 @@ class Calibrator():
         self.rightStereoMap = cv2.initUndistortRectifyMap(self.internal_right, self.dist_right, rightR, self.P2,
                                                           (self.width, self.height), cv2.CV_16SC2)
 
+    '''
+    This method splits images onto 2 arrays of left and right images
+    '''
+
     def __splitImages(self):
         self.images_left = []
         self.images_right = []
@@ -84,6 +111,10 @@ class Calibrator():
             image_l, image_r = splitMergedImage(image)
             self.images_left.append(image_l)
             self.images_right.append(image_r)
+
+    '''
+    This method generates world coordinates of chessboard points
+    '''
 
     def __generateWorldCoordinates(self):
         # Генерация мировых координат
@@ -94,6 +125,10 @@ class Calibrator():
         objp[0, :, 1] = tmp.copy()
         objp = self.square_size * objp
         self.object_points = objp.copy()
+
+    '''
+    This method finds chessboard points from images
+    '''
 
     def __getCorners(self):
         self.corners_left = []
@@ -120,6 +155,10 @@ class Calibrator():
             if left_ret_arr[i] == True and right_ret_arr[i] == True:
                 self.corners_left.append(left_arr[i])
                 self.corners_right.append(right_arr[i])
+
+    '''
+    This method exports calibration result into settings files
+    '''
 
     def exportCalibration(self):
         saveProjectionMatrix(self.P_1, self.P_2)

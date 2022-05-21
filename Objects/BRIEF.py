@@ -1,7 +1,14 @@
 import cv2
 import random
 from Objects.KeyPoint import KeyPoint, getHausdorfDistance
-from Objects.Timer import Timer
+
+'''
+This class implements default BRIEF detection
+The constructor receives next parameters:
+---------------------------------------------
+radius - half size of scanning window
+pairs_count - the amount of compared pairs
+'''
 
 
 class DetectorBRIEF():
@@ -15,10 +22,17 @@ class DetectorBRIEF():
             b_x, b_y = random.randint(-radius, radius), random.randint(-radius, radius)
             self.pairs.append([[a_x, a_y], [b_x, b_y]])
 
+    '''
+    This method receives an image and points array
+    and returns an array of points features
+    '''
+
     def getParamVectors(self, image, points):
+        # Apply blur for flatting result
         blur = cv2.GaussianBlur(image, (5, 5), 0)
         vectors = []
 
+        # Generate an image with black borders for simplify calculation
         process_image = cv2.copyMakeBorder(
             blur,
             self.radius,
@@ -28,6 +42,7 @@ class DetectorBRIEF():
             cv2.BORDER_CONSTANT,
             value=(0, 0, 0))
 
+        # Calculate features
         for point in points:
             vec = []
             for pair in self.pairs:
@@ -49,89 +64,28 @@ class DetectorBRIEF():
 
         return vectors
 
-    def calculatePairs(self, keypoints_a, keypoints_b, border=25):
+    '''
+    This method receives two arrays and looks for matches between pairs
+    You can also change a limit value for understanding that points are similar
+    '''
+
+    def calculatePairs(self, key_points_a, key_points_b, limit=25):
 
         pairs = []
 
-        keypoints_c = keypoints_b.copy()
+        key_points_c = key_points_b.copy()
 
-        for keypoint_a in keypoints_a:
+        for keypoint_a in key_points_a:
             min_distance = -1
             pair_point = None
-            for keypoint_b in keypoints_c:
+            for keypoint_b in key_points_c:
                 distance = getHausdorfDistance(keypoint_a, keypoint_b)
                 if min_distance == -1 or min_distance > distance:
                     min_distance = distance
                     pair_point = keypoint_b
-            if min_distance <= border:
+            if min_distance <= limit:
                 pairs.append([keypoint_a, pair_point])
-                keypoints_c.remove(pair_point)
+                key_points_c.remove(pair_point)
 
         return pairs
 
-
-class DetectorHorizontalBRIEF():
-    def __init__(self, width=1, height=128, pairs_count=128):
-        self.pairs = []
-        self.width = width
-        self.height = height
-        self.pairs_count = pairs_count
-
-        for i in range(pairs_count):
-            a_x, a_y = random.randint(-width, width), random.randint(-height, height)
-            b_x, b_y = random.randint(-width, width), random.randint(-height, height)
-            self.pairs.append([[a_x, a_y], [b_x, b_y]])
-
-    def getParamVectors(self, image, points):
-        blur = cv2.GaussianBlur(image, (5, 5), 0)
-        vectors = []
-
-        process_image = cv2.copyMakeBorder(
-            blur,
-            self.height,
-            self.height,
-            self.width,
-            self.width,
-            cv2.BORDER_CONSTANT,
-            value=(0, 0, 0))
-
-        for point in points:
-            vec = []
-            for pair in self.pairs:
-                a_x = point[0] + pair[0][0]
-                a_y = point[1] + pair[0][1]
-                b_x = point[0] + pair[1][0]
-                b_y = point[1] + pair[1][1]
-
-                pixel_a = process_image[a_y][a_x]
-                pixel_b = process_image[b_y][b_x]
-
-                if pixel_a > pixel_b:
-                    vec.append(1)
-                else:
-                    vec.append(0)
-
-            kp = KeyPoint(point, vec)
-            vectors.append(kp)
-
-        return vectors
-
-    def calculatePairs(self, keypoints_a, keypoints_b, border=25):
-
-        pairs = []
-
-        keypoints_c = keypoints_b.copy()
-
-        for keypoint_a in keypoints_a:
-            min_distance = -1
-            pair_point = None
-            for keypoint_b in keypoints_c:
-                distance = getHausdorfDistance(keypoint_a, keypoint_b)
-                if min_distance == -1 or min_distance > distance:
-                    min_distance = distance
-                    pair_point = keypoint_b
-            if min_distance <= border:
-                pairs.append([keypoint_a, pair_point])
-                keypoints_c.remove(pair_point)
-
-        return pairs
