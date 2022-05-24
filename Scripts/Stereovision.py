@@ -10,7 +10,7 @@ import Utils.StereopairUtils as StereopairUtils
 import cv2
 
 
-def loadImagesAndDoBlockMatching():
+def openImagesAndGetDistanceBM():
     timer = Timer()
     images = FileUtils.getFramesImages()
     counter = 1
@@ -39,7 +39,7 @@ def loadImagesAndDoBlockMatching():
         cv2.imwrite("../Result/stereo_pair_" + str(counter) + ".png", depth)
 
 
-def openImageAndGetDistance():
+def openImagesAndGetDistanceEpipolar():
     P_1, P_2 = FileUtils.loadProjectionMatrix()
 
     timer = Timer()
