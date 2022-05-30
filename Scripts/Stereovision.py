@@ -16,13 +16,10 @@ def openImagesAndGetDistanceBM():
     counter = 1
     radius = 25
 
-    stereo = cv2.StereoBM_create(numDisparities=64, blockSize=radius)
-
     for image in images:
         counter += 1
         height, width = image.shape
         timer.refreshTimer()
-        im_left, im_right = StereoUtils.splitMergedImage(image)
         pair = StereopairUtils.getCenterPairBlockMatching(image, radius)
         timer.printTime("BM Pair")
 
@@ -33,10 +30,7 @@ def openImagesAndGetDistanceBM():
         b = np.array(pair[1]) + (radius, radius) + (int(width / 2), 0)
         cv2.rectangle(image, (a[0], a[1]), (b[0], b[1]), (0, 0, 255), 5)
 
-        depth = stereo.compute(im_left, im_right)
-
-        print(depth)
-        cv2.imwrite("../Result/stereo_pair_" + str(counter) + ".png", depth)
+        cv2.imwrite("../Result/distance_" + str(counter) + ".jpg", image)
 
 
 def openImagesAndGetDistanceEpipolar():
@@ -114,3 +108,5 @@ def openVideoAndGetDistanceEpipolar():
             cv2.imshow("Virutal Camera", resized)
         if cv2.waitKey(25) & 0xFF == ord('q'):
             return
+
+openImagesAndGetDistanceEpipolar()

@@ -3,6 +3,10 @@ from cv2 import imread, FileStorage, FILE_STORAGE_WRITE, FILE_STORAGE_READ
 import pandas as pd
 import numpy as np
 
+'''
+This method reads images from Frames directory
+'''
+
 
 def getFramesImages():
     arr = []
@@ -16,6 +20,11 @@ def getFramesImages():
     return arr
 
 
+'''
+This method saves input projection matrices into special files
+'''
+
+
 def saveProjectionMatrix(P1, P2):
     df = pd.DataFrame(data=P1.astype(float))
     df.to_csv('../config/projection_left.csv', sep=' ', header=False, float_format='%.6f', index=False)
@@ -24,10 +33,20 @@ def saveProjectionMatrix(P1, P2):
     print("Projection matrix are saved...")
 
 
+'''
+This method loads projection matrices from special files
+'''
+
+
 def loadProjectionMatrix():
     P1 = np.genfromtxt('../config/projection_left.csv', delimiter=' ')
     P2 = np.genfromtxt('../config/projection_right.csv', delimiter=' ')
     return P1, P2
+
+
+'''
+This method saves input camera matrices into special files
+'''
 
 
 def saveCameraMatrix(P1, P2):
@@ -38,15 +57,30 @@ def saveCameraMatrix(P1, P2):
     print("Camera matrix are saved...")
 
 
+'''
+This method loads camera matrices from special files
+'''
+
+
 def loadCameraMatrix():
     P1 = np.genfromtxt('../config/camera_left.csv', delimiter=' ')
     P2 = np.genfromtxt('../config/camera_right.csv', delimiter=' ')
     return P1, P2
 
 
+'''
+This method saves input fundamental matrix into special file
+'''
+
+
 def saveFundamentalMatrix(F):
     df = pd.DataFrame(data=F.astype(float))
     df.to_csv('../config/fundamental_matrix.csv', sep=' ', header=False, float_format='%.6f', index=False)
+
+
+'''
+This method saves input distor coeffs into special files
+'''
 
 
 def saveDistorCoeffs(D1, D2):
@@ -57,10 +91,20 @@ def saveDistorCoeffs(D1, D2):
     print("Dist matrix are saved...")
 
 
+'''
+This method loads distor coeffs from special files
+'''
+
+
 def loadDistortionMatrix():
     D1 = np.genfromtxt('../config/distor_left.csv', delimiter=' ')
     D2 = np.genfromtxt('../config/distor_right.csv', delimiter=' ')
     return D1, D2
+
+
+'''
+This method loads fundamental matrix from special file
+'''
 
 
 def loadFundamentalMatrix():
@@ -68,9 +112,19 @@ def loadFundamentalMatrix():
     return F
 
 
+'''
+This method loads distances vectors from special file
+'''
+
+
 def loadDistancesForTest():
     mat = np.genfromtxt('../config/distance_test.csv', delimiter=';')
     return mat
+
+
+'''
+This method saves rectify map into special file
+'''
 
 
 def saveRectifyMap(left_map, right_map):
@@ -80,6 +134,11 @@ def saveRectifyMap(left_map, right_map):
     cv_file.write("Right_Stereo_Map_x", right_map[0])
     cv_file.write("Right_Stereo_Map_y", right_map[1])
     cv_file.release()
+
+
+'''
+This method loads rectify map from special file
+'''
 
 
 def loadRectifyMap():

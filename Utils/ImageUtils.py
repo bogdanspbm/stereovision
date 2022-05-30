@@ -1,24 +1,15 @@
 import cv2
 
-
-def removeImageBorder(image, border=0):
-    if image is None:
-        return None
-
-    height = image.shape[0]
-    width = image.shape[1]
-
-    s1 = image[:, :width - border]
-    s2 = s1[:, border:]
-
-    return s2
+'''
+This method splits an input image on two by vertical 
+and returns them
+'''
 
 
 def splitMergedImage(image):
     if image is None:
         return None, None
 
-    height = image.shape[0]
     width = image.shape[1]
 
     width_cutoff = width // 2
@@ -27,6 +18,12 @@ def splitMergedImage(image):
     s2 = image[:, width_cutoff:]
 
     return s1, s2
+
+
+'''
+This method receives an image and line params
+and returns an image with drawn line 
+'''
 
 
 def drawEpiline(image, line):
@@ -41,9 +38,21 @@ def drawEpiline(image, line):
     return image
 
 
+'''
+This method receives an image and distance value
+and returns an image with drawn distance 
+'''
+
+
 def imageDrawDistance(image, distance):
     value = "Distance: " + str((int)(distance)) + " cm"
     cv2.putText(image, value, (25, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255))
+
+
+'''
+This method receives an image and line start/end points
+and returns all pixels between input points
+'''
 
 
 def getScanline(image, point_start, point_end):
@@ -71,5 +80,3 @@ def getScanline(image, point_start, point_end):
             scanline.append(image[y, x])
 
     return scanline
-
-

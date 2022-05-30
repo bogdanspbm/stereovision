@@ -1,9 +1,13 @@
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
 from Utils.MathUtils import getMatrixDistance, getVectorNorm
 from Utils.FileUtils import loadProjectionMatrix
 from Utils.StereoUtils import getWorldCoordinates
+
+'''
+This is a test script for car detection and calculating distances to cars
+Download your own video into 'Videos' folder to test it
+'''
 
 
 def start():
@@ -81,14 +85,14 @@ def start():
 
                 dist = (int)(getVectorNorm(getWorldCoordinates(P_1, P_2, point_left, point_right)))
 
-                cv2.circle(gray, ((int)(x + w / 2), (int)(y + h / 2)), 10, (0, 0, 255),2)
+                cv2.circle(gray, ((int)(x + w / 2), (int)(y + h / 2)), 10, (0, 0, 255), 2)
                 cv2.rectangle(gray, (x, y), (x + w, y + h), (0, 0, 255), 2)
                 font = cv2.FONT_HERSHEY_DUPLEX
                 cv2.putText(gray, 'Dist: ' + str(dist), (x + 6, y - 6), font, 0.5, (0, 0, 255), 1)
 
                 (x, y, w, h) = cars_right[k]
                 cv2.rectangle(gray, (x, y), (x + w, y + h), (0, 0, 255), 2)
-                cv2.circle(gray, ((int)(x + w / 2), (int)(y + h / 2)), 10, (0, 0, 255),2)
+                cv2.circle(gray, ((int)(x + w / 2), (int)(y + h / 2)), 10, (0, 0, 255), 2)
                 font = cv2.FONT_HERSHEY_DUPLEX
                 cv2.putText(gray, 'Dist: ' + str(dist), (x + 6, y - 6), font, 0.5, (0, 0, 255), 1)
 

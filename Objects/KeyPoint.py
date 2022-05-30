@@ -1,5 +1,12 @@
 import cv2
 
+'''
+This is an implementation of KeyPoint for BRIEF detector
+---------------------------------------------
+coord - coorditanes of the key point
+param - a param vector of the key point
+'''
+
 
 class KeyPoint():
     def __init__(self, coord, param):
@@ -11,6 +18,11 @@ class KeyPoint():
 
     def getParam(self):
         return self.param
+
+
+'''
+This method calculates an Hausdorf distance between two key points
+'''
 
 
 def getHausdorfDistance(keypoin_a, keypoint_b):
@@ -25,6 +37,11 @@ def getHausdorfDistance(keypoin_a, keypoint_b):
             else:
                 distance -= dif
     return distance
+
+
+'''
+This method converts an array of key points into an array of OpenCV key points
+'''
 
 
 def convertToCVKeypoint(array):

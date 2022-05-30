@@ -1,14 +1,20 @@
 import threading
 
-# This class clears camera's capture buffer
-# Default OpenCV Buffer can consist old images from camera
-# To get the freshest image it's supposed to be cleaned
+'''
+This class implements an OpenCV camera buffer cleaner
+It creates a thread which continuously reads the last frame of camera buffer
+It allows to always save only the last frame 
+---------------------------------------------
+camera - an input camera buffer for cleaning
+name - a name of created thread
+'''
+
 
 class CameraBufferCleanerThread(threading.Thread):
     def __init__(self, camera, name='camera-buffer-cleaner-thread'):
         self.camera = camera
         self.last_frame = None
-        super(CameraBufferCleanerThread, self).\
+        super(CameraBufferCleanerThread, self). \
             __init__(name=name)
         self.start()
 
