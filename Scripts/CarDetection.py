@@ -49,7 +49,7 @@ def start():
                     x1, y1, x2, y2 = line[0]
                     cv2.line(frame, (x1, y1), (x2, y2), (0, 255, 0), 5)
 
-        cars = getCanrsInInterestZone(cars, lines, WIDTH)
+        cars = getCarsInInterestZone(cars, lines, WIDTH)
 
         cars_left, cars_right = splitCars(cars, WIDTH)
 
@@ -106,6 +106,11 @@ def start():
             break
 
 
+'''
+This method compares frame block from two arrays and returns closest pairs
+'''
+
+
 def compareBlocks(blocks_left, blocks_right):
     pairs = []
     for i in range(len(blocks_left)):
@@ -125,8 +130,12 @@ def compareBlocks(blocks_left, blocks_right):
     return pairs
 
 
-# Returns True if point is lefter than line
-# else returns False
+'''
+This method returns True if point is lefter than line 
+Else returns False
+'''
+
+
 def getPointRelaiveLine(point, line):
     if line is not None:
         x1, y1, x2, y2 = line[0]
@@ -139,7 +148,13 @@ def getPointRelaiveLine(point, line):
     return True
 
 
-def getCanrsInInterestZone(arr, lines, width):
+'''
+This method returns only block from array
+which are in an interest zone
+'''
+
+
+def getCarsInInterestZone(arr, lines, width):
     res = []
     for (x, y, w, h) in arr:
         flag = False
@@ -158,6 +173,11 @@ def getCanrsInInterestZone(arr, lines, width):
             res.append((x, y, w, h))
 
     return res
+
+
+'''
+This method filters lines from the input array and returns only 4 lines (2 road edges for each half of image)
+'''
 
 
 def filterLines(lines, width):
@@ -214,6 +234,11 @@ def filterLines(lines, width):
     return result
 
 
+'''
+This method splits cars block from array on two arrays (from the left half of image and from the right half of image)
+'''
+
+
 def splitCars(arr, width):
     arr_left = []
     arr_right = []
@@ -227,12 +252,22 @@ def splitCars(arr, width):
     return arr_left, arr_right
 
 
+'''
+This method arrives only blocks from array, which are on the second vertical half of the image
+'''
+
+
 def clearHeight(arr, height):
     res = []
     for (x, y, w, h) in arr:
         if y + h / 2 > height / 2:
             res.append((x, y, w, h))
     return res
+
+
+'''
+This method merge frame block with blocks which are bigger and contains the current block
+'''
 
 
 def mergeCars(arr):
@@ -257,6 +292,11 @@ def mergeCars(arr):
     return res
 
 
+'''
+This method groups extremely close block into one and arrives a smaller array
+'''
+
+
 def clearDuplicates(arr):
     i = 0
     N = len(arr)
@@ -279,5 +319,5 @@ def clearDuplicates(arr):
 
     return arr
 
-
-start()
+# Uncomment to test
+# start()
