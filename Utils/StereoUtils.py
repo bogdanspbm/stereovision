@@ -1,6 +1,12 @@
 import cv2
 import numpy as np
 
+'''
+This method calculates projection matrices for two cameras
+in stereovision system using two property matrices and R|T matrices 
+'''
+
+
 def getProjectionMatrixCalibrated(A1, A2, R, T):
     RT = []
 
@@ -15,6 +21,12 @@ def getProjectionMatrixCalibrated(A1, A2, R, T):
     P_2 = np.matmul(A2, RT_2)
 
     return P_1, P_2
+
+
+'''
+This method triangulates stereo pair into 3D world coordinates
+using two projection matrices and stereo pair coordinates
+'''
 
 def getWorldCoordinates(P1, P2, CORD1, CORD2):
     pts4D = cv2.triangulatePoints(P1, P2, CORD1, CORD2)
