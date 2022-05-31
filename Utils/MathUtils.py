@@ -2,7 +2,17 @@ import math
 import cv2
 import numpy as np
 from math import sqrt
-import sys
+
+'''
+This method calculates extremums in an array
+There are some special options
+-----------------------------------------------
+separate - if True returns two arrays of maximums and minimums, else returns one array on extremums
+merge - if True, merges similar extremums into a single one
+merge_limit - a radius for merging extremums
+radius - point is extremum if it's the biggest/smallest point in this radius
+limit - choose point as extremum only if it's absolute value is bigger then limit
+'''
 
 
 def findExtremums(vec, radius=5, separate=True, merge=True, merge_limit=2, limit=0):
@@ -77,6 +87,11 @@ def findExtremums(vec, radius=5, separate=True, merge=True, merge_limit=2, limit
         return extremums
 
 
+'''
+This method calculates disparity between two arrays
+'''
+
+
 def findDisparity(vec_a, vec_b):
     N = len(vec_a)
     pairs = []
@@ -103,11 +118,12 @@ def findDisparity(vec_a, vec_b):
     return best_disp, min_sum_dist
 
 
-def findPairs(vec_a, vec_b, disp):
-    pairs = []
-    min_sum_dist = -1
-    best_disp = 0
+'''
+This method calculates pair points between two arrays
+'''
 
+
+def findPairs(vec_a, vec_b):
     res = []
     edges_a = []
     edges_b = []
@@ -123,6 +139,11 @@ def findPairs(vec_a, vec_b, disp):
         edges_b.append([(b_1[0] + b_2[0]) / 2, (b_1[1] + b_2[1]) / 2])
 
     return res
+
+
+'''
+This method calculates a distance between two edges
+'''
 
 
 def getDistanceBetweenEdges(edge_a, edge_b, disp, a=1, b=1, c=1):
@@ -141,6 +162,11 @@ def getDistanceBetweenEdges(edge_a, edge_b, disp, a=1, b=1, c=1):
     E_c = (height_a - height_b) ** 2
 
     return a * E_a + b * E_b + c * E_c
+
+
+'''
+This finds pairs between extremus
+'''
 
 
 def matchExtremus(image_a, image_b, extr_a, extr_b, radius=20, dist_limit=1000):
@@ -182,6 +208,11 @@ def matchExtremus(image_a, image_b, extr_a, extr_b, radius=20, dist_limit=1000):
     return pairs
 
 
+'''
+This method calculates distance between two vectors
+'''
+
+
 def getVecDistance(vec_a, vec_b):
     sum = 0
     for i in range(len(vec_a)):
@@ -192,8 +223,18 @@ def getVecDistance(vec_a, vec_b):
     return math.sqrt(sum)
 
 
+'''
+This method calculates distance between two matrices
+'''
+
+
 def getMatrixDistance(mat_a, mat_b):
     return math.sqrt(np.sum(np.absolute(mat_a - mat_b) ** 2))
+
+
+'''
+This method generates extremum points on line
+'''
 
 
 def generateExtremumPoints(extremums, line, height):
@@ -208,9 +249,19 @@ def generateExtremumPoints(extremums, line, height):
     return points
 
 
+'''
+This method calculates vector norm
+'''
+
+
 def getVectorNorm(vec):
     norm = sqrt(vec[0] ** 2 + vec[1] ** 2 + vec[2] ** 2)
     return norm
+
+
+'''
+This method calculates vector gradient
+'''
 
 
 def findGradients(vec_a):
@@ -222,19 +273,9 @@ def findGradients(vec_a):
     return grad
 
 
-def pathFinder(location, path_map, dist):
-    distances = [dist]
-    if location[0] + 1 < len(path_map) and location[1] + 1 < len(path_map):
-        a = pathFinder([location[0] + 1, location[1] + 1], path_map, dist + path_map[location[0] + 1, location[1] + 1])
-        distances.append(a)
-    if location[0] + 1 < len(path_map) and location[1] < len(path_map):
-        a = pathFinder([location[0] + 1, location[1]], path_map, dist + path_map[location[0] + 1, location[1]])
-        distances.append(a)
-    if location[0] < len(path_map) and location[1] + 1 < len(path_map):
-        a = pathFinder([location[0], location[1] + 1], path_map, dist + path_map[location[0], location[1] + 1])
-        distances.append(a)
-
-    return min(distances)
+'''
+This method calculates vector derivative
+'''
 
 
 def getDerivative(arr):
@@ -243,6 +284,11 @@ def getDerivative(arr):
 
     dif = abs(arr - offset)
     return dif
+
+
+'''
+This method finds flucluate zones on array
+'''
 
 
 def getFluctuateZone(dif, radius=100, gamma=0.85):
@@ -265,6 +311,11 @@ def getFluctuateZone(dif, radius=100, gamma=0.85):
     return res
 
 
+'''
+This method finds flucluate zones borders
+'''
+
+
 def getFlucluateZoneBorder(fluctuate_zones, center=960):
     left_border = 0
 
@@ -283,6 +334,11 @@ def getFlucluateZoneBorder(fluctuate_zones, center=960):
             break
 
     return left_border, right_border
+
+
+'''
+This method finds border extremus
+'''
 
 
 def findBorderExtremus(ext_arr, border_left=0, border_right=1920):
