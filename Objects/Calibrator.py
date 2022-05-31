@@ -38,7 +38,7 @@ class Calibrator():
         self.__calibrateInternalParams()
 
         if use_rectify:
-            self.calibrateRectify()
+            self.__calibrateRectify()
 
     '''
     This method calculates only internal camera parameters

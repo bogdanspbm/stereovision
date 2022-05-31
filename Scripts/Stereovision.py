@@ -9,6 +9,18 @@ from Objects.Timer import Timer
 import Utils.StereopairUtils as StereopairUtils
 import cv2
 
+'''
+This is a main script which has 4 methods
+Two of them work with pre-taken pictures and two of them work with a video stream
+All scripts focus on distance measuring
+'''
+
+'''
+This method loads images from 'Frames' folder
+measures distance using block matching algorythm
+and saves a result
+'''
+
 
 def openImagesAndGetDistanceBM():
     timer = Timer()
@@ -31,6 +43,13 @@ def openImagesAndGetDistanceBM():
         cv2.rectangle(image, (a[0], a[1]), (b[0], b[1]), (0, 0, 255), 5)
 
         cv2.imwrite("../Result/distance_" + str(counter) + ".jpg", image)
+
+
+'''
+This method loads images from 'Frames' folder
+measures distance using epipolar line compare algorythm
+and saves a result
+'''
 
 
 def openImagesAndGetDistanceEpipolar():
@@ -59,6 +78,13 @@ def openImagesAndGetDistanceEpipolar():
         counter += 1
 
 
+'''
+This method opens a video stream
+measures distance using block matching algorythm
+and saves a result
+'''
+
+
 def openVideoAndGetDistanceBlockMatching():
     camera = Camera.VirtualCamera(0, 3840, 1080)
     P_1, P_2 = FileUtils.loadProjectionMatrix()
@@ -85,6 +111,13 @@ def openVideoAndGetDistanceBlockMatching():
             return
 
 
+'''
+This method opens a video stream
+measures distance using epipolar line compare algorythm
+and saves a result
+'''
+
+
 def openVideoAndGetDistanceEpipolar():
     camera = Camera.VirtualCamera(0, 3840, 1080)
     P_1, P_2 = FileUtils.loadProjectionMatrix()
@@ -109,4 +142,4 @@ def openVideoAndGetDistanceEpipolar():
         if cv2.waitKey(25) & 0xFF == ord('q'):
             return
 
-openImagesAndGetDistanceEpipolar()
+# openImagesAndGetDistanceEpipolar()

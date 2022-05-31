@@ -4,6 +4,12 @@ from Utils.MathUtils import getVectorNorm
 import numpy as np
 import matplotlib.pyplot as plt
 
+'''
+This is a script for calculating a stereo vision distance error
+It loads hand collected data from a file and draws a comparing plot
+'''
+
+
 mat = loadDistancesForTest()
 P_1, P_2 = loadProjectionMatrix()
 
