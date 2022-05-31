@@ -6,9 +6,14 @@ from Utils.ImageUtils import splitMergedImage, getScanline
 from Objects.KeyPoint import getHausdorfDistance
 from Objects.BRIEF import DetectorBRIEF
 from Objects.Timer import Timer
-from Objects.Plot import Plot
 import matplotlib.pyplot as plt
 import Utils.MathUtils as MathUtils
+
+'''
+This method calculates epipolar line for a center line
+using Fundamental matrix, image id (1 - if main image is left, other if main image is right)
+and image shape
+'''
 
 
 def getEpilineCenter(F, image=1, shape=(1920, 1080)):
@@ -46,6 +51,12 @@ def getEpilineCenter(F, image=1, shape=(1920, 1080)):
     return [x_1, y_1]
 
 
+'''
+This method finds an epipolar lines pair on two images
+for any point, using point coordinate, Fundamental matrix, image id and image shape
+'''
+
+
 def findBothEpilines(point, F, image=1, shape=(1920, 1080)):
     epiline_center = getEpilineCenter(F, image, shape)
     line_a = cv2.computeCorrespondEpilines(np.array(point).reshape(1, 2), image, F)
@@ -59,6 +70,11 @@ def findBothEpilines(point, F, image=1, shape=(1920, 1080)):
     c_2 = point[1] * (epiline_center[0] - point[0]) - point[0] * (epiline_center[1] - point[1])
 
     return [a_1, b_1, c_1], [a_2, b_2, c_2]
+
+
+'''
+This method draws epipolar lines on image using image, poinr, Fundamental matrix and image id
+'''
 
 
 def drawBothEpilines(image, point, F, image_mode=1):
@@ -86,7 +102,6 @@ def drawBothEpilines(image, point, F, image_mode=1):
 
 def generateDisparityMap(image, F):
     timer = Timer()
-    plot = Plot()
 
     height, width = image.shape
 
@@ -129,7 +144,6 @@ def generateDisparityMap(image, F):
         points_a = MathUtils.generateExtremumPoints(extremus_a, line_a, height)
         points_b = MathUtils.generateExtremumPoints(extremus_b, line_b, height)
 
-        # 1.50 sec
         if len(points_a) > 0 and len(points_b) > 0:
             pairs = MathUtils.matchExtremus(image_left, image_right, points_a, points_b, radius=30)
 
@@ -474,8 +488,8 @@ def getCenterPairEpipolar(image):
 
     left_ext, right_ext = MathUtils.findBorderExtremus(ext_a, left_border, right_border)
 
-    #left_ext_pair = findPair(left_ext, ext_b, image_right)
-    #right_ext_pair = findPair(right_ext, ext_b, image_right)
+    # left_ext_pair = findPair(left_ext, ext_b, image_right)
+    # right_ext_pair = findPair(right_ext, ext_b, image_right)
 
     left_disp = abs(left_ext[0] - left_ext_pair[0])
     right_disp = abs(right_ext[0] - right_ext_pair[0])
@@ -483,7 +497,7 @@ def getCenterPairEpipolar(image):
     center_disp = left_disp + (right_disp - left_disp) * (center_x - left_border) / (right_border - left_border)
     center_x_pair = center_x + center_disp
 
-    #plt.clf()
+    # plt.clf()
 
     # plt.scatter(left_ext[0], left_ext[1])
     # plt.scatter(right_ext[0], right_ext[1])
@@ -491,15 +505,15 @@ def getCenterPairEpipolar(image):
     # plt.scatter(left_ext_pair[0], left_ext_pair[1])
     # plt.scatter(right_ext_pair[0], right_ext_pair[1])
 
-    #plt.plot(epipolar_a)
+    # plt.plot(epipolar_a)
     # plt.plot(fluct_zones_a)
-    #plt.plot(epipolar_b)
+    # plt.plot(epipolar_b)
     # plt.plot(fluct_zones_b)
-    #plt.show()
+    # plt.show()
 
     # cv2.imwrite("../Result/scanline_map.jpg", scanline_map)
 
-    #print(center_disp)
+    # print(center_disp)
     return [(center_x, (int)(height / 2)), (center_x_pair, (int)(height / 2))]
 
 
